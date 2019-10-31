@@ -51,6 +51,15 @@ namespace Articulate.Controllers
             return View();
         }
 
+        public IActionResult HighAvailability()
+        {
+            return View();
+        }
+        public IActionResult Services()
+        {
+            return View();
+        }
+
         [Route("/basics")]
         public IActionResult Kill(bool doIt)
         {

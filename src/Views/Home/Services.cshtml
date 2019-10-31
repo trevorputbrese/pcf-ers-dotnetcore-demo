@@ -1,0 +1,57 @@
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Database tool</h6>
+        <div class="dropdown no-arrow">
+            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink" x-placement="bottom-end" style="position: absolute; will-change: transform; top: 0px; left: 0px; transform: translate3d(-156px, 18px, 0px);">
+                <div class="dropdown-header">Provider:</div>
+                <a class="dropdown-item" href="#">Sql Server</a>
+                <a class="dropdown-item" href="#">Migrate Database</a>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        
+        <div class="row">
+            <div class="col-xl-3">
+                <form id="attendee-form" action="add-attendee" method="post">
+                    <div>
+                        <label>First Name</label>
+                        <input type="text" class="form-control" required="required" id="firstName" name="firstName">
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" class="form-control" required="required" id="lastName" name="lastName">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" class="form-control" required="required" id="emailAddress" name="emailAddress">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </form>
+            </div>
+            <div class="col-xl-9">
+                <table class="table table-bordered dataTable" id="dataTable" width="100%" cellspacing="0" role="grid" aria-describedby="dataTable_info" style="width: 100%;">
+                    <thead>
+                    <tr role="row">
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Email</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>Andrew</td>
+                        <td>Stakhov</td>
+                        <td>astakhov@pivotal.io</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+</div>
