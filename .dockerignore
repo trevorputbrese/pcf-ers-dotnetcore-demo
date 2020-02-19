@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+**/out/
+**/layer/
+**/artifacts/
+**/.tmp
+**/.git
+**/.idea
+**/.vs
+**Dockerfile*
+**/*.md

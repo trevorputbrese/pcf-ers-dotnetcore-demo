@@ -17,20 +17,7 @@ namespace Articulate
 
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseCloudFoundryHosting()
                 .AddCloudFoundry()
-//                .ConfigureAppConfiguration(builder =>
-//                {
-//                    // set spring app name to be same as name on the platform
-//                    var config = builder.Build();
-//                    builder.AddCloudFoundry();
-//                    var options = new CloudFoundryApplicationOptions();
-//                    config.GetSection("vcap:application").Bind(options);
-//                    if (options.Name != null)
-//                    {
-//                        builder.AddInMemoryCollection(new Dictionary<string, string> {{"spring:application:name", options.Name}});
-//                    }
-//                })
                 .ConfigureLogging((builderContext, loggingBuilder) =>
                 {
                     loggingBuilder.AddConfiguration(builderContext.Configuration.GetSection("Logging"));
