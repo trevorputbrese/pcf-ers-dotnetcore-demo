@@ -5,11 +5,13 @@ using Nuke.Common;
 using Nuke.Common.CI;
 using Nuke.Common.Execution;
 using Nuke.Common.Git;
+using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.CloudFoundry;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.Git;
+using Nuke.Common.Tools.GitHub;
 using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Utilities.Collections;
 using Octokit;
@@ -45,7 +47,7 @@ class Build : NukeBuild
     [GitRepository] GitRepository GitRepository;
 //    [GitVersion] public GitVersion GitVersion { get; set; }
 
-    [GitVersion] readonly GitVersion GitVersion;
+    [GitVersion(Framework = "netcoreapp3.1")] readonly GitVersion GitVersion;
     [Parameter("Cloud Foundry Username")]
     readonly string CfUsername;
     [Parameter("Cloud Foundry Password")]

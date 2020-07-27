@@ -41,7 +41,7 @@ namespace Articulate
 
         // This method gets called by the runtime. Use this method to add services to the container.
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
-        public IServiceProvider ConfigureServices(IServiceCollection services)
+        public void ConfigureServices(IServiceCollection services)
         {
             services.ConfigureCloudFoundryOptions(Configuration);
             services.AddMvc(options => options.EnableEndpointRouting = false);
@@ -66,7 +66,7 @@ namespace Articulate
             }
             
             services.AddDiscoveryClient(Configuration);
-            return services.BuildServiceProvider(false);
+            // return services.BuildServiceProvider(false);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
