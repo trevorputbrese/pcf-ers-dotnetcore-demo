@@ -36,7 +36,7 @@ class Build : NukeBuild
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
-    string Runtime => "netcoreapp2.2";
+    string Runtime => "netcoreapp3.1";
     [Parameter("GitHub personal access token with access to the repo")]
     string GitHubToken;
 
