@@ -1,0 +1,151 @@
+<div class="card shadow mb-4" id="db-demo">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Database tool</h6>
+        <div class="dropdown no-arrow">
+            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink" x-placement="bottom-end" style="position: absolute; will-change: transform; top: 0px; left: 0px; transform: translate3d(-156px, 18px, 0px);">
+                <a class="dropdown-item" href="#"  data-toggle="modal" data-target="#dbConnectionInfo">Connection info</a>
+                @* <a class="dropdown-item" href="#">Migrate Database</a> *@
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        
+        <div class="row">
+            <div class="col-xl-3">
+                @* <form id="attendee-form" action="add-attendee" method="post"> *@
+                <div>
+                    <label>First Name</label>
+                    <input type="text" class="form-control" required="required" id="firstName" name="firstName" v-model="user.firstName" >
+                </div>
+                <div class="form-group">
+                    <label>Last Name</label>
+                    <input type="text" class="form-control" required="required" id="lastName" name="lastName" v-model="user.lastName" >
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="emailAddress" class="form-control" required="required" id="emailAddressAddress" name="emailAddressAddress" v-model="user.emailAddress">
+                </div>
+                <a href="#" class="btn btn-primary btn-icon-split">
+                    <span class="icon text-white-50">
+                        <i class="fas fa-plus"></i>
+                    </span>
+                    <span class="text" v-on:click="add">Add</span>
+                </a>
+                <a href="#" class="btn btn-danger btn-icon-split">
+                    <span class="icon text-white-50">
+                        <i class="fas fa-trash"></i>
+                    </span>
+                    <span class="text" v-on:click="clear">Clear</span>
+                </a>
+                @* <button type="submit" class="btn btn-primary">Add</button> *@
+                @* </form> *@
+                <hr/>
+            </div>
+            
+            <div class="col-xl-9">
+                <table class="table table-bordered dataTable" id="dataTable" width="100%" cellspacing="0" role="grid" aria-describedby="dataTable_info" style="width: 100%;">
+                    <thead>
+                    <tr role="row">
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Email</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="user in users">
+                        <td>{{ user.firstName }}</td>
+                        <td>{{ user.lastName }}</td>
+                        <td>{{ user.emailAddress }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="dbConnectionInfo" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="display: none;">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+    
+                    <h4 class="modal-title" id="myModalLabel">Db Connection Info</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-3">
+                            <strong>Provider:</strong>
+                        </div>
+                        <div class="col-sm">{{ db.providerName }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-3">
+                            <strong>Connection String:</strong>
+                        </div>
+                        <div class="col-sm"><code>{{ db.connectionString }}</code></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div>
+</div>
+<script>
+var pageModel = new Vue({
+    el: '#db-demo',
+    data: {
+        user: {
+            firstName: "andrew",
+            lastName: "stakhov",
+            emailAddress: "test@test.com"
+        },
+        users: [
+        {
+            firstName: "andrew",
+            lastName: "stakhov",
+            emailAddress: "test@test.com"
+        }],
+        db: {}
+    },
+    _this: this,
+    mounted: function() {
+        this.refresh();
+        var self = this;
+        var dbConnectionUrl = "@Url.Action("GetDbConnectionInfo","Services")";
+        $.get(dbConnectionUrl)
+        .done(function (result){ 
+            self.db = result;
+        })
+    },
+    methods: {
+        add: function () {
+            var self = this;
+            var addUserUrl = "@Url.Action("AddUser","Services")";
+            $.post(addUserUrl, this.user)
+             .always(function () {
+                self.refresh();
+            });
+            
+        },
+        clear: function () {
+            var self = this;
+            var clearUrl = "@Url.Action("ClearUsers","Services")";
+            $.post(clearUrl, function () { self.refresh() });
+        },
+        refresh: function (){
+            var getUsers = "@Url.Action("GetUsers","Services")";
+            var self = this;
+            $.get(getUsers, function (users) {
+                  self.users = users;
+            });
+        },
+        
+    }
+});
+</script>

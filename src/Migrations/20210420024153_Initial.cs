@@ -12,7 +12,8 @@ namespace Articulate.Migrations
                 columns: table => new
                 {
                     Id = table.Column<long>(nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     EmailAddress = table.Column<string>(nullable: true),
                     PhoneNumber = table.Column<string>(nullable: true),
                     ZipCode = table.Column<string>(nullable: true),

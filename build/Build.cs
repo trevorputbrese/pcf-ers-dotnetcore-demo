@@ -1,21 +1,28 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Threading.Tasks;
 using Nuke.Common;
 using Nuke.Common.CI;
 using Nuke.Common.Execution;
 using Nuke.Common.Git;
+using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.CloudFoundry;
+using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.Git;
+using Nuke.Common.Tools.GitHub;
 using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Utilities.Collections;
 using Octokit;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
+using static Nuke.Common.Tools.Docker.DockerTasks;
 using static Nuke.Common.Tools.CloudFoundry.CloudFoundryTasks;
 
 
@@ -36,7 +43,7 @@ class Build : NukeBuild
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
-    string Runtime => "netcoreapp2.2";
+    string Runtime => "net5.0";
     [Parameter("GitHub personal access token with access to the repo")]
     string GitHubToken;
 
@@ -45,7 +52,7 @@ class Build : NukeBuild
     [GitRepository] GitRepository GitRepository;
 //    [GitVersion] public GitVersion GitVersion { get; set; }
 
-    [GitVersion] readonly GitVersion GitVersion;
+    [GitVersion(Framework = "net5.0")] readonly GitVersion GitVersion;
     [Parameter("Cloud Foundry Username")]
     readonly string CfUsername;
     [Parameter("Cloud Foundry Password")]
@@ -60,6 +67,8 @@ class Build : NukeBuild
     readonly int AppsCount = 3;    
     [Parameter("Type of database plan (default: db-small)")]
     readonly string DbPlan = "db-small";
+    [Parameter("Number of users to create")]
+    readonly int NumUsers = 1;
 
     [Parameter("Skip logging in Cloud Foundry and use the current logged in session")] 
     readonly bool CfSkipLogin;
@@ -70,8 +79,6 @@ class Build : NukeBuild
     AbsolutePath PublishDirectory => RootDirectory / "src" / "bin" / Configuration / "netcoreapp2.2" / "publish";
     string PackageZipName => $"articulate-{GitVersion.MajorMinorPatch}.zip";
 
-    // Target Serialize => _ => _
-    //     .Executes(() => File.WriteAllText(ArtifactsDirectory / "state.json", JsonConvert.SerializeObject(this, Formatting.Indented, new JsonSerializerSettings(){ ContractResolver = new MyContractResolver()})));
     
     Target Clean => _ => _
         .Before(Restore)
@@ -95,8 +102,8 @@ class Build : NukeBuild
             DotNetBuild(s => s
                 .SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
-                .SetAssemblyVersion(GitVersion.GetNormalizedAssemblyVersion())
-                .SetFileVersion(GitVersion.GetNormalizedFileVersion())
+                .SetAssemblyVersion(GitVersion.AssemblySemVer)
+                .SetFileVersion(GitVersion.AssemblySemFileVer)
                 .SetInformationalVersion(GitVersion.InformationalVersion)
                 .EnableNoRestore());
         });
@@ -105,19 +112,17 @@ class Build : NukeBuild
         .Description("Publishes the project to a folder which is ready to be deployed to target machines")
         .Executes(() =>
         {
-            Logger.Info(GitVersion == null);
-            Logger.Info(GitVersion.NuGetVersionV2);
             DotNetPublish(s => s
                 .SetProject(Solution)
                 .SetConfiguration(Configuration)
-                .SetAssemblyVersion(GitVersion.GetNormalizedAssemblyVersion())
-                .SetFileVersion(GitVersion.GetNormalizedFileVersion())
+                .SetAssemblyVersion(GitVersion.AssemblySemVer)
+                .SetFileVersion(GitVersion.AssemblySemFileVer)
                 .SetInformationalVersion(GitVersion.InformationalVersion));
         });
 
     Target Pack => _ => _
         .DependsOn(Publish)
-        .Description("Publishes the project and creates a zip package in artfiacts folder")
+        .Description("Publishes the project and creates a zip package in artifacts folder")
         .Produces(ArtifactsDirectory)
         .Executes(() =>
         {
@@ -138,6 +143,37 @@ class Build : NukeBuild
                 .SetUsername(CfUsername)
                 .SetPassword(CfPassword));
         });
+
+    Target CfCreateWorkshopUsers => _ => _
+        .Executes(() =>
+        {
+            Dictionary<string, string> users = new();
+            for (var i = 1; i < NumUsers+1; i++)
+            {
+                var (userName, password) = GetCredentialsForUser(i);
+                CloudFoundry($"create-user {userName} {password}");
+                CloudFoundry($"create-org {userName}");
+                CloudFoundry($"create-org {userName} {userName} OrgManager");
+                users.Add(userName, password);
+            }
+
+            Logger.Block(string.Join("\n", users.Select(x => $"{x.Key} / {x.Value}")));
+        });
+
+    Target CfDeleteWorkshopUsers => _ => _
+        .Executes(() =>
+        {
+            for (int i = 1;; i++)
+            {
+                var (userName, password) = GetCredentialsForUser(i);
+                var results = CloudFoundry($"delete-user {userName} -f");
+                if (results.Any(x => x.Text.Contains("does not exist")))
+                    break;
+                CloudFoundry($"delete-org {userName} -f");
+            }
+        });
+
+    (string userName, string password) GetCredentialsForUser(int i) => ($"user-{i}", "p@ssword1");
     
     Target Deploy => _ => _
         .DependsOn(CfLogin)
@@ -178,6 +214,27 @@ class Build : NukeBuild
             CloudFoundryRestart(c => c
                 .SetAppName(appName)
                 .CombineWith(names,(cs,v) => cs.SetAppName(v)), degreeOfParallelism: 5);
+        });
+
+    Target RunSpringBootAdmin => _ => _
+        .Executes(async () =>
+        {
+            var containerName = "spring-boot-admin";
+            IReadOnlyCollection<Output> output = new Output[0];
+            await Task.WhenAny(Task.Run(() =>
+                output = DockerRun(c => c
+                    .SetImage("steeltoeoss/spring-boot-admin")
+                    .EnableRm()
+                    .SetName(containerName)
+                    .SetAttach("STDOUT", "STDERR")
+                    .SetPublish("9090:8080"))
+            ), Task.Delay(TimeSpan.FromSeconds(10)));
+            
+            output.EnsureOnlyStd();
+            Logger.Block("Press ENTER to shutdown...");
+            Console.ReadLine();
+            DockerKill(c => c
+                .SetContainers(containerName));
         });
 
     Target Release => _ => _

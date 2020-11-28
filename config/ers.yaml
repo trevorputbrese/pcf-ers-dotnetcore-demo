@@ -16,13 +16,6 @@
       }
     }
   },
-  "Security": {
-    "Oauth2": {
-      "Client": {
-        "ValidateCertificates": false
-      }
-    }
-  },
   "Logging": {
     "IncludeScopes": false,
     "LogLevel": {

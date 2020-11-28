@@ -1,0 +1,86 @@
+﻿<div class="row" id="logging">
+<div class="col-xl-6">
+<div class="card shadow">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Logging</h6>
+    </div>
+    <div class="card-body">
+        <div class="row mt-3">
+            <div class="col-sm">
+                <p>
+                    This demo sends a sample message to the backend which will simulate writing it to a standard out.
+                    You should be able to see standard log output in the console. You can read logs on platform by either tailing them (live stream):
+                </p>
+                <code>cf logs APPNAME</code>
+                <p>or you can get the most recent logs via </p>
+                <code>cf logs APPNAME --recent</code>
+                <p>
+                    Additional you can see the effect of dynamically changing log levels via Steeltoe Actuators. When on TAS, these are controllable via
+                    Logs sections of your app. You can also control these locally via Spring Boot Admin, which can be launched by running
+                    <code>.\build.ps1 RunSpringBootAdmin</code>
+                </p>
+            </div>
+        </div>
+        <hr/>
+        <div class="row mt-3">
+            <div class="col-sm">
+                <label>Log message</label>
+                <input type="text" class="form-control" required="required" v-model="message">
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-sm">
+
+                <a href="#" class="btn btn-danger btn-icon-split" v-on:click="log('Error')">
+                    <span class="icon text-white-50">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </span>
+                    <span class="text">Error</span>
+                </a>
+                <a href="#" class="btn btn-warning btn-icon-split" v-on:click="log('Warning')">
+                    <span class="icon text-white-50">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </span>
+                    <span class="text">Warning</span>
+                </a>
+                <a href="#" class="btn btn-info btn-icon-split" v-on:click="log('Information')">
+                    <span class="icon text-white-50">
+                        <i class="fas fa-info-circle"></i>
+                    </span>
+                    <span class="text">Info</span>
+                </a>
+                <a href="#" class="btn btn-secondary btn-icon-split" v-on:click="log('Debug')">
+                    <span class="icon text-white-50">
+                        <i class="fas fa-bug"></i>
+                    </span>
+                    <span class="text">Debug</span>
+                </a>
+                <a href="#" class="btn btn-light btn-icon-split" v-on:click="log('Trace')">
+                    <span class="icon text-white-50">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <span class="text">Trace</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</div>
+
+
+<script>
+var pageModel = new Vue({
+  el: '#logging',
+  data: {
+  	message: "Something happened...."
+  },
+  methods: {
+      log: function (level) {
+          var logUrl = "@Url.Action("Log", "Logging")";
+          $.post(logUrl, {message: this.message, logLevel: level});
+          console.log(this.message);
+      }
+    }
+});
+</script>

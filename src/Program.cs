@@ -2,9 +2,16 @@
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+// using Steeltoe.Bootstrap.Autoconfig;
+using Steeltoe.Common.Hosting;
 using Steeltoe.Extensions.Configuration.CloudFoundry;
+using Steeltoe.Extensions.Configuration.Placeholder;
 using Steeltoe.Extensions.Logging;
+using Steeltoe.Management.CloudFoundry;
+using Steeltoe.Management.TaskCore;
+
 
 namespace Articulate
 {
@@ -17,26 +24,14 @@ namespace Articulate
 
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseCloudFoundryHosting()
-                .AddCloudFoundry()
-//                .ConfigureAppConfiguration(builder =>
-//                {
-//                    // set spring app name to be same as name on the platform
-//                    var config = builder.Build();
-//                    builder.AddCloudFoundry();
-//                    var options = new CloudFoundryApplicationOptions();
-//                    config.GetSection("vcap:application").Bind(options);
-//                    if (options.Name != null)
-//                    {
-//                        builder.AddInMemoryCollection(new Dictionary<string, string> {{"spring:application:name", options.Name}});
-//                    }
-//                })
-                .ConfigureLogging((builderContext, loggingBuilder) =>
-                {
-                    loggingBuilder.AddConfiguration(builderContext.Configuration.GetSection("Logging"));
-                    loggingBuilder.AddDynamicConsole();
-                })
+                // .AddCloudFoundryConfiguration()
+                .AddPlaceholderResolver()
+                .AddCloudFoundryActuators()
+                
                 .UseStartup<Startup>()
+                // .AddDynamicLogging()
+                // .AddSteeltoe()
+                // .ConfigureWebHost(cfg => cfg.UseStartup<Startup>())
                 .Build();
     }
     
