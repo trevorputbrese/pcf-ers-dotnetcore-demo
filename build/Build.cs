@@ -69,7 +69,7 @@ class Build : NukeBuild
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
-    AbsolutePath PublishDirectory => RootDirectory / "src" / "bin" / Configuration / "netcoreapp2.2" / "publish";
+    AbsolutePath PublishDirectory => RootDirectory / "src" / "bin" / Configuration / Runtime / "publish";
     string PackageZipName => $"articulate-{GitVersion.MajorMinorPatch}.zip";
 
     // Target Serialize => _ => _
