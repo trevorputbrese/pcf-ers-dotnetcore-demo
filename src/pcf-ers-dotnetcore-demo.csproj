@@ -60,7 +60,9 @@
 <!--      <Link>$([System.String]::Copy('%(filename).json').Replace('$(AppName)-','appsettings.').Replace('$(AppName)','appsettings'))</Link>-->
 <!--      <CopyToOutputDirectory>Always</CopyToOutputDirectory>-->
 <!--    </Content>-->
-  
+    <Content Update="appsettings.development.json">
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>

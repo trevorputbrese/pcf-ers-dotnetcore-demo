@@ -24,7 +24,7 @@ namespace Articulate
 
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                // .AddCloudFoundryConfiguration()
+                .AddCloudFoundryConfiguration()
                 .AddPlaceholderResolver()
                 .AddCloudFoundryActuators()
                 
