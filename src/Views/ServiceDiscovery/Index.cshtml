@@ -70,12 +70,12 @@ var pageModel = new Vue({
             var targets = self.instances
 				.map((el) => { return el.name }) 
 				.filter((el) => {
-					return el.name !== self.app.appname;
+					return el !== self.app.appName;
 				})
 				
 				.join(',');
             console.log(targets);
-            $.post("@Url.Action("Ping","ServiceDiscovery")" + "/targets=" + targets)
+            $.post("@Url.Action("Ping","ServiceDiscovery")" + "?targets=" + targets)
              .done(function (result) {
              	self.response = result;
             });

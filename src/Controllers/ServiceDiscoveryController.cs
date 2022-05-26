@@ -59,7 +59,7 @@ namespace Articulate.Controllers
                     try
                     {
                         _log.LogInformation($"Sending ping request to {nextTarget}");
-                        pong = await httpClient.GetStringAsync($"https://{nextTarget}/ping/?targets={remainingTargets}");
+                        pong = await httpClient.GetStringAsync($"https://{nextTarget}/ServiceDiscovery/Ping?targets={remainingTargets}");
                     }
                     catch (Exception e)
                     {
