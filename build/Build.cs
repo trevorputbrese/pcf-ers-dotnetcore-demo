@@ -19,11 +19,13 @@ using Nuke.Common.Tools.GitHub;
 using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Utilities.Collections;
 using Octokit;
+using Serilog;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.Docker.DockerTasks;
 using static Nuke.Common.Tools.CloudFoundry.CloudFoundryTasks;
+// ReSharper disable TemplateIsNotCompileTimeConstantProblem
 
 
 [CheckBuildProjectConfigurations]
@@ -33,6 +35,10 @@ using static Nuke.Common.Tools.CloudFoundry.CloudFoundryTasks;
 //)]
 class Build : NukeBuild
 {
+    static Build()
+    {
+        Environment.SetEnvironmentVariable("NUKE_TELEMETRY_OPTOUT","true");
+    }
     /// Support plugins are available for:
     ///   - JetBrains ReSharper        https://nuke.build/resharper
     ///   - JetBrains Rider            https://nuke.build/rider
@@ -129,7 +135,7 @@ class Build : NukeBuild
             Directory.CreateDirectory(ArtifactsDirectory);
             DeleteFile(ArtifactsDirectory / PackageZipName);
             ZipFile.CreateFromDirectory(PublishDirectory, ArtifactsDirectory / PackageZipName);
-            Logger.Block(ArtifactsDirectory / PackageZipName);
+            Log.Information(ArtifactsDirectory / PackageZipName);
         });
 
     Target CfLogin => _ => _
@@ -157,7 +163,7 @@ class Build : NukeBuild
                 users.Add(userName, password);
             }
 
-            Logger.Block(string.Join("\n", users.Select(x => $"{x.Key} / {x.Value}")));
+            Log.Information(string.Join("\n", users.Select(x => $"{x.Key} / {x.Value}")));
         });
 
     Target CfDeleteWorkshopUsers => _ => _
@@ -231,7 +237,7 @@ class Build : NukeBuild
             ), Task.Delay(TimeSpan.FromSeconds(10)));
             
             output.EnsureOnlyStd();
-            Logger.Block("Press ENTER to shutdown...");
+            Log.Information("Press ENTER to shutdown...");
             Console.ReadLine();
             DockerKill(c => c
                 .SetContainers(containerName));
@@ -244,9 +250,9 @@ class Build : NukeBuild
         .Executes(async () =>
         {
             if (!GitRepository.IsGitHubRepository())
-                ControlFlow.Fail("Only supported when git repo remote is github");
+                Assert.Fail("Only supported when git repo remote is github");
             if(!IsGitPushedToRemote)
-                ControlFlow.Fail("Your local git repo has not been pushed to remote. Can't create release until source is upload");
+                Assert.Fail("Your local git repo has not been pushed to remote. Can't create release until source is upload");
             var client = new GitHubClient(new ProductHeaderValue("nuke-build"))
             {
                 Credentials = new Credentials(GitHubToken, AuthenticationType.Bearer)
@@ -282,7 +288,7 @@ class Build : NukeBuild
             var releaseAssetUpload = new ReleaseAssetUpload(PackageZipName, "application/zip", File.OpenRead(zipPackageLocation), null);
             var releaseAsset = await client.Repository.Release.UploadAsset(release, releaseAssetUpload);
             
-            Logger.Block(releaseAsset.BrowserDownloadUrl);
+            Log.Information(releaseAsset.BrowserDownloadUrl);
         });
     
     

@@ -1,7 +1,5 @@
-﻿<Project ToolsVersion="Current">
-  <Target Name="Restore"/>
-  <Target Name="Publish"/>
+﻿<Project>
   <ItemGroup>
-    <Content Include="**" />
+    <None Include="*" />
   </ItemGroup>
 </Project>

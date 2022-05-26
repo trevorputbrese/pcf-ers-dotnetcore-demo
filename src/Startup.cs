@@ -50,12 +50,12 @@ namespace Articulate
             services.ConfigureCloudFoundryOptions(Configuration);
             services.AddScoped<AppEnv>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            services.AddCloudFoundryCertificateAuth(Configuration);
+            services.AddCloudFoundryCertificateAuth();
 
             var isEurekaBound = Configuration.IsServiceBound<EurekaServiceInfo>();
             var isMySqlServiceBound = Configuration.IsServiceBound<MySqlServiceInfo>();
             var isSqlServerBound = Configuration.IsServiceBound<SqlServerServiceInfo>();
-            services.AddDistributedTracing(Configuration);
+            services.AddDistributedTracing();
             services.AddDbContext<AttendeeContext>(db =>
             {
                 if (isMySqlServiceBound)
@@ -97,6 +97,7 @@ namespace Articulate
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
+            app.UseForwardedHeaders();
             app.Use((context, next) =>
             {
                 context.Request.Scheme = "https";
