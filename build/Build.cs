@@ -49,7 +49,7 @@ class Build : NukeBuild
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
-    string Runtime => "net6.0";
+    string Framework => "net6.0";
     [Parameter("GitHub personal access token with access to the repo")]
     string GitHubToken;
 
@@ -79,10 +79,10 @@ class Build : NukeBuild
     [Parameter("Skip logging in Cloud Foundry and use the current logged in session")] 
     readonly bool CfSkipLogin;
 
-
+    string Runtime = "linux-x64";
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
-    AbsolutePath PublishDirectory => RootDirectory / "src" / "bin" / Configuration / Runtime / "publish";
+    AbsolutePath PublishDirectory => RootDirectory / "src" / "bin" / Configuration / Framework / Runtime  / "publish";
     string PackageZipName => $"articulate-{GitVersion.MajorMinorPatch}.zip";
 
     
@@ -121,6 +121,8 @@ class Build : NukeBuild
             DotNetPublish(s => s
                 .SetProject(Solution)
                 .SetConfiguration(Configuration)
+                .SetRuntime("linux-x64")
+                .DisableSelfContained()
                 .SetAssemblyVersion(GitVersion.AssemblySemVer)
                 .SetFileVersion(GitVersion.AssemblySemFileVer)
                 .SetInformationalVersion(GitVersion.InformationalVersion));
