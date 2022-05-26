@@ -49,7 +49,7 @@ class Build : NukeBuild
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
-    string Runtime => "net5.0";
+    string Runtime => "net6.0";
     [Parameter("GitHub personal access token with access to the repo")]
     string GitHubToken;
 
@@ -58,7 +58,7 @@ class Build : NukeBuild
     [GitRepository] GitRepository GitRepository;
 //    [GitVersion] public GitVersion GitVersion { get; set; }
 
-    [GitVersion(Framework = "net5.0")] readonly GitVersion GitVersion;
+    [GitVersion(Framework = "net6.0")] readonly GitVersion GitVersion;
     [Parameter("Cloud Foundry Username")]
     readonly string CfUsername;
     [Parameter("Cloud Foundry Password")]
@@ -82,7 +82,7 @@ class Build : NukeBuild
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
-    AbsolutePath PublishDirectory => RootDirectory / "src" / "bin" / Configuration / "netcoreapp2.2" / "publish";
+    AbsolutePath PublishDirectory => RootDirectory / "src" / "bin" / Configuration / Runtime / "publish";
     string PackageZipName => $"articulate-{GitVersion.MajorMinorPatch}.zip";
 
     
