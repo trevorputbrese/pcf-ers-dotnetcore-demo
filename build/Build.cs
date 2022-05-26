@@ -198,8 +198,8 @@ class Build : NukeBuild
                 .SetSpace(CfSpace)
                 .SetOrg(CfOrg));
             CloudFoundryCreateService(c => c
-                .SetService("p-service-registry")
-                .SetPlan(CfApiEndpoint?.Contains("api.run.pivotal.io") ?? false ? "trial" : "standard")
+                .SetService("p.service-registry")
+                .SetPlan("standard")
                 .SetInstanceName("eureka"));
             CloudFoundryCreateService(c => c
                 .SetService("p.mysql")
