@@ -70,7 +70,7 @@ var pageModel = new Vue({
             var targets = self.instances
 				.map((el) => { return el.name }) 
 				.filter((el) => {
-					return el.name !== self.app.name;
+					return el.name !== self.app.appname;
 				})
 				
 				.join(',');
