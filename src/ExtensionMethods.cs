@@ -7,7 +7,7 @@ public static class ExtensionMethods
 {
     public static void EnsureMigrationOfContext<T>(this IApplicationBuilder app) where T : DbContext
     {
-        var context = app.ApplicationServices.CreateScope().ServiceProvider.GetService<T>();
+        var context = app.ApplicationServices.CreateScope().ServiceProvider.GetService<T>()!;
         context.Database.Migrate();
     }
 

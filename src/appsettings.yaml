@@ -1,0 +1,40 @@
+﻿---
+"$schema": https://steeltoe.io/schema/latest/schema.json
+Spring:
+  Application:
+    Name: ERS
+  boot:
+    admin:
+      client:
+        url: http://localhost:9090
+        metadata:
+          user.name: actuatorUser
+          user.password: actuatorPassword
+Security:
+  Oauth2:
+    Client:
+      ValidateCertificates: false
+Logging:
+  IncludeScopes: false
+  LogLevel:
+    Default: Information
+    Microsoft.AspNetCore: Warning
+    Microsoft.EntityFrameworkCore: Warning
+    Microsoft.EntityFrameworkCore.Migrations: Information
+    Articulate: Trace
+    Steeltoe.Discovery: Information
+Management:
+  Endpoints:
+    Cloudfoundry:
+      ValidateCertificates: false
+      Exposure:
+        Include:
+          - "*"
+    Actuator:
+      Exposure:
+        Include:
+          - "*"
+Eureka:
+  Client:
+    Validate_certificates: false
+    ShouldRegisterWithEureka: true

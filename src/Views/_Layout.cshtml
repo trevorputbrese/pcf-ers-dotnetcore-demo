@@ -19,10 +19,9 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
+    <meta name="author" content="Andrew Stakhov">
 
-    <title>SB Admin 2 - Dashboard</title>
+    <title>TAS Demo</title>
 
     <!-- Custom fonts for this template-->
 
@@ -37,9 +36,6 @@
     <!-- Page level plugins -->
 
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.css">
-    @* <script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script> *@
-    @* <script src="https://cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.min.js"></script> *@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
@@ -197,11 +193,11 @@
     </a>
 </li>
 <li class="nav-item">
-    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
+    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#serviceBindings" aria-expanded="true" aria-controls="serviceBindings">
         <i class="fas fa-fw fa-cogs"></i>
         <span>Service Bindings</span>
     </a>
-    <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+    <div id="serviceBindings" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
 
 
         <div class="bg-white py-2 collapse-inner rounded">
@@ -209,14 +205,6 @@
                 <h6 class="collapse-header">{{ serviceType }}</h6>
                 <a class="collapse-item" v-for="si in serviceInstances" v-on:click="selectServiceInstance(serviceType, si.name)"  data-toggle="modal" data-target="#siInfo">{{ si.name }}</a>
             </div>
-            @* @foreach (var (service, instances) in new CloudFoundryServicesOptions(Configuration).Services) *@
-            @* { *@
-            @*     <h6 class="collapse-header">@service:</h6> *@
-            @*     @foreach (var si in instances) *@
-            @*     { *@
-            @*         <div class="collapse-item">@si.Name</div> *@
-            @*     } *@
-            @* } *@
         </div>
 
     </div>
@@ -226,12 +214,6 @@
 <div class="sidebar-heading">
     Demos
 </div>
-@* <li class="nav-item"> *@
-@*     <a class="nav-link" asp-controller="Home" asp-action="HighAvailability"> *@
-@*         <i class="fas fa-fw fa-power-off"></i> *@
-@*         <span>Scale & HA</span> *@
-@*     </a> *@
-@* </li> *@
 <li class="nav-item">
     <a class="nav-link" asp-controller="Services" asp-action="Index">
         <i class="fas fa-fw fa-database"></i>
@@ -257,27 +239,33 @@
     </a>
 </li>
 <li class="nav-item">
-    <a class="nav-link" asp-controller="Security" asp-action="Index">
-        <i class="fas fa-fw fa-lock"></i>
+    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#security" aria-expanded="true" aria-controls="security">
+        <i class="fas fa-fw fa-cogs"></i>
         <span>Security</span>
     </a>
+    <div id="security" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+
+
+        <div class="bg-white py-2 collapse-inner rounded">
+            <a class="collapse-item" asp-controller="Security" asp-action="OpenIdConnect">Single Sign On</a>
+            <a class="collapse-item" asp-controller="Security" asp-action="Mtls">mTLS</a>
+        </div>
+
+    </div>
 </li>
-@if (Configuration.IsServiceBound<EurekaServiceInfo>())
-{
-    <li class="nav-item">
-        <a class="nav-link" asp-controller="ServiceDiscovery" asp-action="Index">
-            <i class="fas fa-fw fa-broadcast-tower"></i>
-            <span>Service Discovery</span>
-        </a>
-    </li>
-}
+<li class="nav-item">
+    <a class="nav-link" asp-controller="ServiceDiscovery" asp-action="Index">
+        <i class="fas fa-fw fa-broadcast-tower"></i>
+        <span>Service Discovery</span>
+    </a>
+</li>
 
 <!-- Divider -->
 <hr class="sidebar-divider d-none d-md-block">
 
 <!-- Sidebar Toggler (Sidebar) -->
 <div class="text-center d-none d-md-inline">
-    <button class="rounded-circle border-0" id="sidebarToggle"></button>
+    <button class="rounded-circle border-0" id="sidebarToggle" v-on:click="sidebarToggle"></button>
 </div>
 
 </ul>
@@ -345,10 +333,12 @@
 <script src="~/vendor/jquery-easing/jquery.easing.min.js"></script>
 
 <!-- Custom scripts for all pages-->
-<script src="~/js/sb-admin-2.min.js"></script>
+<script src="~/js/sb-admin-2.js"></script>
 <script>
   var environment = null;
   var instanceInfoUrl = "@Url.Action("InstanceInfo", "Home")";
+  
+  
   
   $.get(instanceInfoUrl, function(appEnv) {
     environment = appEnv;
@@ -362,23 +352,22 @@
             selectServiceInstance: function (serviceType, name){
                 var self = this;
                 this.app.services[serviceType].forEach(function (item,index){
-                    //console.log(self.currentSi);
-
                     if (item.name === name){
-                        //Vue.set(this, "currentSi", item);
                         self.currentSi = item;
-                        console.log(currentSi);
                     }
                 })
-            }
-          }
+            },
+             sidebarToggle: function (){
+                 $("body").toggleClass("sidebar-toggled");
+                 $(".sidebar").toggleClass("toggled");
+                 if ($(".sidebar").hasClass("toggled")) {
+                   $('.sidebar .collapse').collapse('hide');
+                 }
+             },
+          },
         });
     });
   </script>
-
-<!-- Page level custom scripts -->
-@* <script src="~/js/demo/chart-area-demo.js"></script> *@
-@* <script src="~/js/demo/chart-pie-demo.js"></script> *@
 
 </body>
 

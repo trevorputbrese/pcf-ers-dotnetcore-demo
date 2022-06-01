@@ -1,0 +1,88 @@
+﻿---
+"$schema": https://raw.githubusercontent.com/steeltoeoss-incubator/steeltoe-schema/master/schema.json
+Eureka:
+  Instance:
+    IsNonSecurePortEnabled: false
+    SecurePortEnabled: true
+    SecurePort: 65419
+    InstanceId: "${random:uuid}"
+    HomePageUrlPath: "/"
+    StatusPageUrlPath: "/"
+    HealthCheckUrlPath: "/actuator/health"
+    HostName: localhost
+    RegistrationMethod: local
+vcap:
+  application:
+    application_id: 14b3a6e1-d5ed-4b9a-9324-d501e3794e80
+    application_name: ers
+    application_version: 7654331f-0905-4d62-b709-5792086bd5f1
+    cf_api: https://api.sys.coalinga.cf-app.com
+    limits:
+      disk: 1024
+      fds: 16384
+      mem: 768
+    name: ers
+    organization_id: 83904768-64fa-4304-9b06-4f08e2f6fe79
+    organization_name: rcaf
+    process_id: 14b3a6e1-d5ed-4b9a-9324-d501e3794e80
+    process_type: web
+    space_id: 29a686c9-5a54-44d2-865d-99a10c2aa646
+    space_name: presenter
+    users:
+    version: 7654331f-0905-4d62-b709-5792086bd5f1
+  services:
+    p-identity:
+      - binding_guid: 4c6f01d6-0abd-4006-9a9c-44a83d61d4e7
+        binding_name:
+        credentials:
+          auth_domain: https://andrew.login.sys.longbeach.cf-app.com
+          client_id: 4c6f01d6-0abd-4006-9a9c-44a83d61d4e7
+          client_secret: c506f1be-1cc9-473d-9e61-c3f6b1c12dc8
+          grant_types:
+            - authorization_code
+        instance_guid: 93e22621-0c48-49f3-b674-66fef67642f3
+        instance_name: sso
+        label: p-identity
+        name: sso
+        plan: andrew
+        provider:
+        syslog_drain_url:
+        tags: [ ]
+        volume_mounts: [ ]
+    p.mysql:
+      - binding_guid: a88827d7-ad41-4c5a-8d60-9b46dfcdc679
+        binding_name:
+        credentials:
+          hostname: localhost
+          jdbcUrl: jdbc:mysql://localhost:3306/service_instance_db?user=root&password=&useSSL=false
+          name: service_instance_db
+          password: ''
+          port: 3306
+          uri: mysql://root:@localhost:3306/service_instance_db?reconnect=true
+          username: root
+        instance_guid: a9ca2073-983e-442a-911e-d671748c88ea
+        instance_name: mysql
+        label: p.mysql
+        name: mysql
+        plan: db-small
+        provider:
+        syslog_drain_url:
+        tags:
+          - mysql
+        volume_mounts: []
+    p.service-registry:
+      - binding_name:
+        credentials:
+          uri: http://localhost:8761
+        instance_name: eureka
+        label: p.service-registry
+        name: eureka
+        plan: standard
+        provider:
+        syslog_drain_url:
+        tags:
+          - eureka
+          - discovery
+          - registry
+          - spring-cloud
+        volume_mounts: []

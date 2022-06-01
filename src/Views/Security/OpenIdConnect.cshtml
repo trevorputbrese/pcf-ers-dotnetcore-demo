@@ -1,0 +1,94 @@
+@using Articulate
+@using Articulate.Models
+@using Steeltoe.Connector.Services
+@using Steeltoe.Extensions.Configuration.CloudFoundry
+@inject IConfiguration _configuration
+@inject AppEnv _app
+@inject CloudFoundryApplicationOptions _cfApp;
+@{
+    var sysDomain = _cfApp.CF_Api.Replace("https://api.", "");
+    var identityAdminUrl = $"https://p-identity.{sysDomain}";
+}
+<div class="card shadow mb-4 col-xl-6" id="security">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">OAuth2 Security</h6>
+    </div>
+    <div class="card-body">
+        <p>This sample shows how you can use TAS Single Sign On capabilities to simplify authentication / authorization when using OAuth2/OpenID Connect. TAS SSO simplifies integration with 
+            external identity store, such as Active Directory, Google, Facebook or any other service that supports OpenID Connect, SAML or LDAP. Applications declare application specific
+            claims they can understand with SSO tile, and these claims can be associated with users and other apps. As a full featured OpenID Connect server, TAS SSO will issue tokens that contain
+            the necessary claims about the caller that allow apps to assert and enforce security policies that are line-of-bussiness specific. The OAuth2 information it needs to obtain and validate tickets 
+            is injected directly into the app via TAS service binding, and ASP.NET authenticaiton middleware is automatically configured with Steeltoe to use correct settings. 
+        </p>
+        
+        
+        @if (!_configuration.IsServiceBound<SsoServiceInfo>())
+        {
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <p>This app is not currently bound to SSO service. To get this sample working, you need to configure SSO plan with identity provider and bind it to your app. If you don't have sso plan configured, see 
+                        <a href="https://docs.vmware.com/en/Single-Sign-On-for-VMware-Tanzu-Application-Service/1.14/sso/GUID-integration-guide-index.html">SSO Plan integraiton guide</a></p>
+                    <ol>
+                        <li>Create an instance of SSO plan: <code>cf create-service p-identity MY-PLAN-NAME sso</code></li>
+                        <li>Bind SSO plan to your app<code>cf create-service p-identity MY-PLAN-NAME sso -c sso-binding.json</code>.  
+                            <br/>(You can find <code>sso-binding.json</code> in root of the repo.
+                            Adjust <code>identity_providers</code> with the name of the identity provider your plan uses. The name of the identity provider can be retrieved on the plan configuration page at <a href="@identityAdminUrl">@identityAdminUrl</a>)</li>
+                    </ol>
+                </div>
+            </div>
+        }
+        <hr/>
+        @if (!User.Identity!.IsAuthenticated)
+        {
+            <p>You're currently not logged in. Click the button below to access a secure page and trigger OAuth2 signin flow via SSO</p>
+            <a asp-controller="Security" asp-action="SecureEndpoint" class="btn btn-secondary btn-icon-split">
+                <span class="icon text-white-50">
+                    <i class="fas fa-exchange-alt"></i>
+                </span>
+                <span class="text">Go to secure page</span>
+            </a>
+        }
+        else
+        {
+            <div class="row">
+                <div class="col-9">
+                    Logged in as @User.Identity.Name
+                </div>
+                <div class="col">
+                    <a asp-controller="Security" asp-action="Logout" class="btn btn-primary btn-icon-split">
+                        <span class="icon text-white-50">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </span>
+                        <span class="text">Signout</span>
+                    </a>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <h4>Granted Scopes:</h4>
+                    <ul>
+                        @foreach (var claim in User.Claims.Where(x => x.Type == "scope"))
+                        {
+                            <li>@claim.Value</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+<script>
+var pageModel = new Vue({
+    el: '#security',
+    data: {
+       
+    },
+    _this: this,
+    mounted: function() {
+        
+    },
+    methods: {
+        
+    }
+});
+</script>

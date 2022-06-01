@@ -5,31 +5,18 @@
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-//        "VCAP_APPLICATION": "{\n      \"application_id\": \"14b3a6e1-d5ed-4b9a-9324-d501e3794e80\",\n      \"application_name\": \"ers\",\n      \"application_uris\": [\n          \"ers-silly-wolf.apps.coalinga.cf-app.com\"\n      ],\n      \"application_version\": \"7654331f-0905-4d62-b709-5792086bd5f1\",\n      \"cf_api\": \"https://api.sys.coalinga.cf-app.com\",\n      \"limits\": {\n        \"disk\": 1024,\n        \"fds\": 16384,\n        \"mem\": 768\n      },\n      \"name\": \"ers\",\n      \"organization_id\": \"83904768-64fa-4304-9b06-4f08e2f6fe79\",\n      \"organization_name\": \"rcaf\",\n      \"process_id\": \"14b3a6e1-d5ed-4b9a-9324-d501e3794e80\",\n      \"process_type\": \"web\",\n      \"space_id\": \"29a686c9-5a54-44d2-865d-99a10c2aa646\",\n      \"space_name\": \"presenter\",\n      \"uris\": [\n          \"ers-silly-wolf.apps.coalinga.cf-app.com\"\n      ],\n      \"users\": null,\n      \"version\": \"7654331f-0905-4d62-b709-5792086bd5f1\"\n    }",
-        "VCAP_APPLICATION": "{}",
-//        "VCAP_SERVICES": "{\n      \"p-identity\": [\n        {\n          \"binding_name\": null,\n          \"credentials\": {\n            \"auth_domain\": \"https://demo-sso.login.sys.coalinga.cf-app.com\",\n            \"client_id\": \"29fdb965-36ff-451b-b1ae-ae8cdd3d3cff\",\n            \"client_secret\": \"de7ed924-5ead-49c2-980a-eb7bfc920cf2\",\n            \"grant_types\": [\n                \"authorization_code\"\n            ]\n          },\n          \"instance_name\": \"sso\",\n          \"label\": \"p-identity\",\n          \"name\": \"sso\",\n          \"plan\": \"demo-sso\",\n          \"provider\": null,\n          \"syslog_drain_url\": null,\n          \"tags\": [],\n          \"volume_mounts\": []\n        }\n      ]\n    }"
       },
-      "applicationUrl": "https://localhost:65419;https://host.docker.internal:65419"
+      "applicationUrl": "https://localhost:65419"
       
     },
-    "vcap-env-vars": {
+    "vcap": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
-        "VCAP_SERVICES": "{   \"p-service-registry\": [    {     \"binding_name\": null,     \"credentials\": {      \"access_token_uri\": \"https://p-spring-cloud-services.uaa.run.pcfone.io/oauth/token\",      \"client_id\": \"p-service-registry-55dc2abf-3e9d-4fa1-bb2c-69f2e0d5377b\",      \"client_secret\": \"83iMrJWhHL8c\",      \"uri\": \"https://eureka-2f2e2d1e-3662-4c6f-b47d-a978c772dfc5.apps.pcfone.io\"     },     \"instance_name\": \"eureka\",     \"label\": \"p-service-registry\",     \"name\": \"eureka\",     \"plan\": \"standard\",     \"provider\": null,     \"syslog_drain_url\": null,     \"tags\": [      \"eureka\",      \"discovery\",      \"registry\",      \"spring-cloud\"     ],     \"volume_mounts\": []    }   ]  }",
-        "VCAP_APPLICATION": "{   \"application_id\": \"a932cb3f-5dfe-48b2-92a9-05d2c3f67024\",   \"application_name\": \"ers\",   \"application_uris\": [    \"ers1.apps.pcfone.io\"   ],   \"application_version\": \"ae5efd34-b3bc-478a-8af4-27122bac9efe\",   \"cf_api\": \"https://api.run.pcfone.io\",   \"limits\": {    \"disk\": 1024,    \"fds\": 16384,    \"mem\": 1024   },   \"name\": \"ers\",   \"space_id\": \"c4ccc79f-32b5-48f7-a461-c1b6f02a2c17\",   \"space_name\": \"ers\",   \"uris\": [    \"ers1.apps.pcfone.io\"   ],   \"users\": null,   \"version\": \"ae5efd34-b3bc-478a-8af4-27122bac9efe\"  }",
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "VCAP_APPLICATION": "{   }",
+        "ASPNETCORE_ENVIRONMENT": "Development",
       },
-      "applicationUrl": "http://127.0.0.1:65419/;http://host.docker.internal:65419"
+      "applicationUrl": "https://localhost:65419"
     },
-    "vcap-config-file": {
-      "commandName": "Project",
-      "launchBrowser": true,
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "VCAP"
-      },
-      "applicationUrl": "http://host.docker.internal:65419"
-    }
-
   }
 }

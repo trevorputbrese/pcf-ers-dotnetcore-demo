@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <RootNamespace />
+    <ImplicitUsings>true</ImplicitUsings>
     <NoWarn>CS0649;CS0169</NoWarn>
     <NukeRootDirectory>..</NukeRootDirectory>
     <NukeScriptDirectory>..</NukeScriptDirectory>
@@ -13,9 +14,9 @@
   <ItemGroup>
     <PackageReference Include="Nuke.Common" Version="6.0.3" />
     <PackageDownload Include="GitVersion.Tool" Version="[5.10.1]" />
-    <PackageDownload Include="CloudFoundry.CommandLine.linux-x64" Version="[6.46.0]" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
-    <PackageDownload Include="CloudFoundry.CommandLine.osx-x64" Version="[6.46.0]" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
-    <PackageDownload Include="CloudFoundry.CommandLine.win-x64" Version="[6.46.0]" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
+    <PackageDownload Include="CloudFoundry.CommandLine.linux-x64" Version="[7.4.1]" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
+    <PackageDownload Include="CloudFoundry.CommandLine.osx-x64" Version="[7.4.1]" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
+    <PackageDownload Include="CloudFoundry.CommandLine.win-x64" Version="[7.4.1]" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
   </ItemGroup>
 
   <ItemGroup>

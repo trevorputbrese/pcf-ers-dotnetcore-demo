@@ -25,7 +25,7 @@ namespace Articulate.Controllers
             Task.Run(async () =>
             {
                 await Task.Delay(1000);
-                _log.LogWarning($"APP {_app.AppName} instance ID {_app.InstanceName} KILLED");
+                _log.LogWarning("APP {AppName} instance ID {InstanceName} KILLED", _app.AppName, _app.InstanceName);
                 Environment.Exit(0);
             });
             return _app;

@@ -22,10 +22,6 @@
           "type": "string",
           "description": "Cloud Foundry Password"
         },
-        "CfSkipLogin": {
-          "type": "boolean",
-          "description": "Skip logging in Cloud Foundry and use the current logged in session"
-        },
         "CfSpace": {
           "type": "string",
           "description": "Cloud Foundry Space"
@@ -49,6 +45,10 @@
         "DbPlan": {
           "type": "string",
           "description": "Type of database plan (default: db-small)"
+        },
+        "FastPush": {
+          "type": "boolean",
+          "description": "Enable parallel push. Speeds things up, but logs from parallel pushes will get intermixed"
         },
         "GitHubToken": {
           "type": "string",
@@ -114,6 +114,7 @@
               "CfCreateWorkshopUsers",
               "CfDeleteWorkshopUsers",
               "CfLogin",
+              "CfTarget",
               "Clean",
               "Compile",
               "Deploy",
@@ -129,6 +130,10 @@
           "type": "string",
           "description": "Path to a solution file that is automatically loaded"
         },
+        "SsoPlan": {
+          "type": "string",
+          "description": "Type of SSO plan"
+        },
         "Target": {
           "type": "array",
           "description": "List of targets to be invoked. Default is '{default_target}'",
@@ -138,6 +143,7 @@
               "CfCreateWorkshopUsers",
               "CfDeleteWorkshopUsers",
               "CfLogin",
+              "CfTarget",
               "Clean",
               "Compile",
               "Deploy",

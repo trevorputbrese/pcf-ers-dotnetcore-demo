@@ -20,6 +20,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.5" />
+    <PackageReference Include="NetEscapades.Configuration.Yaml" Version="2.2.0" />
     <PackageReference Include="Steeltoe.Discovery.ClientCore" Version="$(SteeltoeVersion)" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="6.0.1" />
     <PackageReference Include="Steeltoe.Connector.EFCore" Version="$(SteeltoeVersion)" />
@@ -29,6 +30,7 @@
     <PackageReference Include="Steeltoe.Discovery.Eureka" Version="$(SteeltoeVersion)" />
     <PackageReference Include="Steeltoe.Extensions.Configuration.CloudFoundryCore" Version="$(SteeltoeVersion)" />
     <PackageReference Include="Steeltoe.Extensions.Configuration.PlaceholderCore" Version="$(SteeltoeVersion)" />
+    <PackageReference Include="Steeltoe.Extensions.Configuration.RandomValueBase" Version="3.2.0" />
 <!--    <PackageReference Include="Steeltoe.Extensions.Logging.DynamicLogger" Version="$(SteeltoeVersion)" />-->
     <PackageReference Include="Steeltoe.Management.CloudFoundryCore" Version="$(SteeltoeVersion)" />
     <PackageReference Include="Steeltoe.Management.TaskCore" Version="$(SteeltoeVersion)" />
@@ -36,13 +38,7 @@
     <PackageReference Include="Steeltoe.Security.Authentication.CloudFoundryCore" Version="$(SteeltoeVersion)" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="git.properties">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Migrations" />
-    <Folder Include="Views\Shared" />
+    <None Include="git.properties" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <Target Name="_GitProperties" AfterTargets="CoreCompile">
     <WriteLinesToFile File="git.properties" Lines="git.remote.origin.url=$(GitRoot)" Overwrite="true" />
@@ -62,13 +58,9 @@
 <!--      <Link>$([System.String]::Copy('%(filename).json').Replace('$(AppName)-','appsettings.').Replace('$(AppName)','appsettings'))</Link>-->
 <!--      <CopyToOutputDirectory>Always</CopyToOutputDirectory>-->
 <!--    </Content>-->
-    <Content Update="appsettings.development.json">
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </Content>
+    <Content Include="appsettings.yaml" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="appsettings.Development.yaml" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
-  <Target Name="Hello">
-    <Message Importance="high" Text="@(ContentX->'%(link)')" />
-  </Target>
 </Project>

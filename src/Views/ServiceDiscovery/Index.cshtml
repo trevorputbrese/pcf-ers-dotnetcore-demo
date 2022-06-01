@@ -1,3 +1,8 @@
+@using Articulate
+@using Articulate.Models
+@using Steeltoe.Connector.Services
+@inject IConfiguration _configuration
+@inject AppEnv _app
 <div class="row" id="page-body">
 	<div class="col-xl-6">
 		<div class="card shadow" >
@@ -5,38 +10,58 @@
 				<h6 class="m-0 font-weight-bold text-primary">Service Discovery</h6>
 			</div>
 			<div class="card-body">
-				<p>One of the key challanges with microservices is keep track of all the endpoints
-					and dynamically responding to availability of each. Eureka service based on Netflix OSS
-					stack helps us with this. </p>
-				<table class="table">
-					<thead>
-					<tr>
-						<th>Service Name</th>
-						<th>Url(s)</th>
-					</tr>
-					</thead>
-					<tbody>
-					<tr v-for="si in instances">
-						<td>{{ si.name }}</td>
-						<td>
-							<ul class="list-unstyled">
-								<li v-for="url in si.urls">{{ url }}</li>
-							</ul>
-						</td>
-					</tr>
-					</tbody>
-				</table>
-				<div class="row">
-                    <div class="col-sm">
-						<a href="#" class="btn btn-secondary btn-icon-split" v-on:click="pingAll">
-							<span class="icon text-white-50">
-								<i class="fas fa-exchange-alt"></i>
-							</span>
-							<span class="text">Send distributed ping</span>
-						</a>
-                    </div>
-					<div class="col-sm"><code>{{ response }}</code></div>
-				</div>
+				<p>One of the key challanges with microservices is keep track of all the endpoints and dynamically responding to availability of each. Eureka service based on Netflix OSS
+					stack helps us with this. Applications register and advertise their endpoints into a central registry, while other apps can lookup endpoints for their dependencies by using app's 
+					common name.</p>
+				
+				@if(! _configuration.IsServiceBound<EurekaServiceInfo>())
+				{
+					<p>To get this sample working you need to bind it to an instance of Eureka. Create eureka by following these steps: </p>
+					<ol>
+						<li>Confirm that Eureka is available by running <code>cf marketplace</code> and ensure that a serivce offering of type <code>p.service-registry</code> exists. 
+							If you don't see it offering, your administrator needs to install 
+							<a href="https://network.pivotal.io/products/p-spring-cloud-services/">Spring Cloud Services Tile</a> into TAS.</li>
+						<li>Create service: <code>cf create-service p.service-registry standard eureka</code>. This will take a few minutes.
+							<br/>You can confirm by checking status using <code>cf service mysql</code>.</li>
+						<li>Once service is provisioned, bind it to your app: <code>cf bind-service @_app.AppName eureka</code></li>
+						<li>Restart the app to make it pick up new service binding environmental variable: <code>cf restart  @_app.AppName</code></li>
+					</ol>
+				}
+				else
+				{
+					<p>In this sample, every app bound to same Eureka instance will show up in the list below. You can push this sample multiple times under different app names and watch it appear below.</p>
+					<p>You can simulate sending request and getting a reply through multiple apps of this type registered with Eureka using the "Send distributed ping" button. </p>
+					<table class="table">
+						<thead>
+						<tr>
+							<th>Service Name</th>
+							<th>Url(s)</th>
+						</tr>
+						</thead>
+						<tbody>
+						<tr v-for="si in instances">
+							<td>{{ si.name }}</td>
+							<td>
+								<ul class="list-unstyled">
+									<li v-for="url in si.urls">{{ url }}</li>
+								</ul>
+							</td>
+						</tr>
+						</tbody>
+					</table>
+					<div class="row">
+						<div class="col-sm">
+							<a href="#" class="btn btn-secondary btn-icon-split" v-on:click="pingAll">
+								<span class="icon text-white-50">
+									<i class="fas fa-exchange-alt"></i>
+								</span>
+								<span class="text">Send distributed ping</span>
+							</a>
+						</div>
+						<div class="col-sm"><code>{{ response }}</code></div>
+					</div>
+					
+				}
 			</div>
 		</div>
 	</div>
@@ -74,7 +99,6 @@ var pageModel = new Vue({
 				})
 				
 				.join(',');
-            console.log(targets);
             $.post("@Url.Action("Ping","ServiceDiscovery")" + "?targets=" + targets)
              .done(function (result) {
              	self.response = result;

@@ -1,10 +1,10 @@
 ---
 applications:
 - name: ers
-  memory: 768M
+  memory: 384M
   instances: 1
   random-route: true
-  path: src\bin\Debug\net6.0\publish\
+  path: src\bin\Debug\net6.0\linux-x64\publish\
   services: []
   env:
     SKIP_SSL_VALIDATION: "true"

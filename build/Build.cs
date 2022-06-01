@@ -1,11 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.IO.Compression;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using Nuke.Common;
-using Nuke.Common.CI;
 using Nuke.Common.Execution;
 using Nuke.Common.Git;
 using Nuke.Common.IO;
@@ -21,7 +16,6 @@ using Nuke.Common.Utilities.Collections;
 using Octokit;
 using Serilog;
 using static Nuke.Common.IO.FileSystemTasks;
-using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.Docker.DockerTasks;
 using static Nuke.Common.Tools.CloudFoundry.CloudFoundryTasks;
@@ -33,7 +27,7 @@ using static Nuke.Common.Tools.CloudFoundry.CloudFoundryTasks;
 //[AzureDevopsConfigurationGenerator(
 //    VcsTriggeredTargets = new[]{"Pack"}
 //)]
-class Build : NukeBuild
+partial class Build : NukeBuild
 {
     static Build()
     {
@@ -73,12 +67,13 @@ class Build : NukeBuild
     readonly int AppsCount = 3;    
     [Parameter("Type of database plan (default: db-small)")]
     readonly string DbPlan = "db-small";
-    [Parameter("Number of users to create")]
-    readonly int NumUsers = 1;
+    [Parameter("Type of SSO plan")]
+    string SsoPlan = null;
 
-    [Parameter("Skip logging in Cloud Foundry and use the current logged in session")] 
-    readonly bool CfSkipLogin;
+    [Parameter("Enable parallel push. Speeds things up, but logs from parallel pushes will get intermixed")] 
+    readonly bool FastPush;
 
+    
     string Runtime = "linux-x64";
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
@@ -141,7 +136,7 @@ class Build : NukeBuild
         });
 
     Target CfLogin => _ => _
-        .OnlyWhenStatic(() => !CfSkipLogin)
+        // .OnlyWhenStatic(() => !CfSkipLogin)
         .Requires(() => CfUsername, () => CfPassword, () => CfApiEndpoint)
         .Unlisted()
         .Executes(() =>
@@ -152,97 +147,101 @@ class Build : NukeBuild
                 .SetPassword(CfPassword));
         });
 
-    Target CfCreateWorkshopUsers => _ => _
-        .Executes(() =>
-        {
-            Dictionary<string, string> users = new();
-            for (var i = 1; i < NumUsers+1; i++)
-            {
-                var (userName, password) = GetCredentialsForUser(i);
-                CloudFoundry($"create-user {userName} {password}");
-                CloudFoundry($"create-org {userName}");
-                CloudFoundry($"create-org {userName} {userName} OrgManager");
-                users.Add(userName, password);
-            }
-
-            Log.Information(string.Join("\n", users.Select(x => $"{x.Key} / {x.Value}")));
-        });
-
-    Target CfDeleteWorkshopUsers => _ => _
-        .Executes(() =>
-        {
-            for (int i = 1;; i++)
-            {
-                var (userName, password) = GetCredentialsForUser(i);
-                var results = CloudFoundry($"delete-user {userName} -f");
-                if (results.Any(x => x.Text.Contains("does not exist")))
-                    break;
-                CloudFoundry($"delete-org {userName} -f");
-            }
-        });
-
-    (string userName, string password) GetCredentialsForUser(int i) => ($"user-{i}", "p@ssword1");
-    
-    Target Deploy => _ => _
-        .DependsOn(CfLogin)
-        .After(Pack)
+    Target CfTarget => _ => _
         .Requires(() => CfSpace, () => CfOrg)
-        .Description("Deploys to Cloud Foundry")
-        .Executes(async () =>
+        .Executes(() =>
         {
-            string appName = "ers1";
-            
-            var names = Enumerable.Range(1, AppsCount).Select(x => $"ers{x}").ToArray();;
             CloudFoundryCreateSpace(c => c
                 .SetOrg(CfOrg)
                 .SetSpace(CfSpace));
             CloudFoundryTarget(c => c
                 .SetSpace(CfSpace)
                 .SetOrg(CfOrg));
-            CloudFoundryCreateService(c => c
-                .SetService("p.service-registry")
-                .SetPlan("standard")
-                .SetInstanceName("eureka"));
-            CloudFoundryCreateService(c => c
-                .SetService("p.mysql")
-                .SetPlan(DbPlan)
-                .SetInstanceName("mysql"));
-            CloudFoundryPush(c => c
-                .SetRandomRoute(true)
-                .SetPath(ArtifactsDirectory / PackageZipName)
-                .CombineWith(names,(cs,v) => cs.SetAppName(v)), degreeOfParallelism: 1);
-            await CloudFoundryEnsureServiceReady("eureka");
-            await CloudFoundryEnsureServiceReady("mysql");
-            CloudFoundryBindService(c => c
-                .SetServiceInstance("eureka")
-                .CombineWith(names,(cs,v) => cs.SetAppName(v)), degreeOfParallelism: 5);
-            CloudFoundryBindService(c => c
-                .SetServiceInstance("mysql")
-                .CombineWith(names,(cs,v) => cs.SetAppName(v)), degreeOfParallelism: 5);
-            CloudFoundryRestart(c => c
-                .SetAppName(appName)
-                .CombineWith(names,(cs,v) => cs.SetAppName(v)), degreeOfParallelism: 5);
         });
 
-    Target RunSpringBootAdmin => _ => _
+    
+    Target Deploy => _ => _
+        .DependsOn(CfLogin, CfTarget, Pack)
+        .Description("Deploys {AppsCount} instances to Cloud Foundry /w all dependency services")
         .Executes(async () =>
         {
-            var containerName = "spring-boot-admin";
-            IReadOnlyCollection<Output> output = new Output[0];
-            await Task.WhenAny(Task.Run(() =>
-                output = DockerRun(c => c
-                    .SetImage("steeltoeoss/spring-boot-admin")
-                    .EnableRm()
-                    .SetName(containerName)
-                    .SetAttach("STDOUT", "STDERR")
-                    .SetPublish("9090:8080"))
-            ), Task.Delay(TimeSpan.FromSeconds(10)));
+            var names = Enumerable.Range(1, AppsCount).Select(x => $"ers{x}").ToArray();;
+            var marketplace = CloudFoundry("marketplace").StdToText();
+            var hasMySql = marketplace.Contains("p.mysql");
+            var hasDiscovery = marketplace.Contains("p.service-registry");
+            var hasSso = marketplace.Contains("p-identity");
+            if (hasSso && SsoPlan == null)
+            {
+                SsoPlan = Regex.Match(marketplace, @"(?<=^p-identity\s+)[^\s]+", RegexOptions.Multiline).Value;
+            }
+
+            if (hasDiscovery)
+            {
+                CloudFoundryCreateService(c => c
+                    .SetService("p.service-registry")
+                    .SetPlan("standard")
+                    .SetInstanceName("eureka"));
+            }
+            else
+            {
+                Log.Warning("Service registry not detected in marketplace. Some demos will not be available");
+            }
+
+            if (hasMySql)
+            {
+                CloudFoundryCreateService(c => c
+                    .SetService("p.mysql")
+                    .SetPlan(DbPlan)
+                    .SetInstanceName("mysql"));
+            }
+            else
+            {
+                Log.Warning("MySQL not detected in marketplace. Some demos will not be available");
+            }
+
+            if (hasSso)
+            {
+                CloudFoundryCreateService(c => c
+                    .SetService("p-identity")
+                    .SetPlan(SsoPlan)
+                    .SetInstanceName("sso")
+                    .SetConfigurationParameters(RootDirectory / "sso-binding.json"));
+            }
+            else
+            {
+                Log.Warning("SSO not detected in marketplace. Some demos will not be available");
+            }
             
-            output.EnsureOnlyStd();
-            Log.Information("Press ENTER to shutdown...");
-            Console.ReadLine();
-            DockerKill(c => c
-                .SetContainers(containerName));
+            CloudFoundryPush(c => c
+                .EnableRandomRoute()
+                .SetPath(ArtifactsDirectory / PackageZipName)
+                .CombineWith(names,(cs,v) => cs.SetAppName(v)), degreeOfParallelism: FastPush ? AppsCount : 1);
+            await CloudFoundryEnsureServiceReady("eureka");
+            await CloudFoundryEnsureServiceReady("mysql");
+            await CloudFoundryEnsureServiceReady("sso");
+            foreach (var appName in names)
+            {
+                var eurekaBound = CloudFoundryBindService(c => c
+                    .SetServiceInstance("eureka")
+                    .SetAppName(appName))
+                    .StdToText()
+                    .Contains("already bound");
+                var mySqlBound = CloudFoundryBindService(c => c
+                        .SetServiceInstance("mysql")
+                        .SetAppName(appName))
+                    .StdToText()
+                    .Contains("already bound");
+                var ssoBound = CloudFoundryBindService(c => c
+                        .SetServiceInstance("sso")
+                        .SetAppName(appName))
+                    .StdToText()
+                    .Contains("already bound");
+                if (!eurekaBound || !mySqlBound || !ssoBound)
+                {
+                    CloudFoundryRestart(c => c
+                        .SetAppName(appName));
+                }
+            }
         });
 
     Target Release => _ => _
@@ -292,11 +291,31 @@ class Build : NukeBuild
             
             Log.Information(releaseAsset.BrowserDownloadUrl);
         });
-    
-    
-    
+
+
     bool IsGitPushedToRemote => GitTasks
         .Git("status")
         .Select(x => x.Text)
         .Count(x => x.Contains("nothing to commit, working tree clean") || x.StartsWith("Your branch is up to date with")) == 2;
+
+    Target RunSpringBootAdmin => _ => _
+        .Executes(async () =>
+        {
+            var containerName = "spring-boot-admin";
+            IReadOnlyCollection<Output> output = new Output[0];
+            await Task.WhenAny(Task.Run(() =>
+                output = DockerRun(c => c
+                    .SetImage("steeltoeoss/spring-boot-admin")
+                    .EnableRm()
+                    .SetName(containerName)
+                    .SetAttach("STDOUT", "STDERR")
+                    .SetPublish("9090:8080"))
+            ), Task.Delay(TimeSpan.FromSeconds(10)));
+            
+            output.EnsureOnlyStd();
+            Log.Information("Press ENTER to shutdown...");
+            Console.ReadLine();
+            DockerKill(c => c
+                .SetContainers(containerName));
+        });
 }

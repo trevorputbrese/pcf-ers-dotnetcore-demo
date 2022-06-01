@@ -1,0 +1,7 @@
+{
+    "grant_types": ["authorization_code"],
+    "scopes": ["openid"],
+    "authorities": ["openid"],
+    "auto_approved_scopes": ["openid"],
+    "identity_providers": ["gcp"]
+}

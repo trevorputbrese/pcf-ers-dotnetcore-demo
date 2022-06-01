@@ -1,0 +1,44 @@
+﻿<div class="card shadow mb-4 col-xl-6" id="page-body">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">mTLS Security</h6>
+    </div>
+    <div class="card-body">
+        <p>Applications running on TAS will have a platform generated certificate available inside the container. This certificate carries information about the app, space and org it lives in.
+            For simple app-to-app security scenarios, we can restrict calls to APIs to be only available to other apps running on the platform in same space or same org. </p>
+        <p>This sample will send a request to a secure endpoint of another copy of this app in same space, and return the results.</p>
+        <p>If it doesn't work, ensure that both apps are in same space, and the platform is configured to forward Client certs to the app. 
+            <a href="https://docs.pivotal.io/application-service/2-12/concepts/http-routing.html">See docs for more info.</a> </p>
+        <hr/>
+        <a href="#" class="btn btn-secondary btn-icon-split" v-on:click="sendRequest">
+            <span class="icon text-white-50">
+                <i class="fas fa-exchange-alt"></i>
+            </span>
+            <span class="text">Send request</span>
+        </a>
+        
+        <div class="col-sm"><code>{{ response }}</code></div>
+
+    </div>
+    
+</div>
+
+<script>
+
+var pageModel = new Vue({
+    el: '#page-body',
+    data: {
+    	response: ""
+    },
+    mounted: function() {
+        var self = this;
+    },
+    methods: {
+        sendRequest: function () {
+            var self = this;
+            $.get("@Url.Action("CallMtlsService","Security")", function (results) {
+                self.response = results;
+            });
+        },
+    }
+});
+</script>

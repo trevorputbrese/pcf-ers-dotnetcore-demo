@@ -10,8 +10,6 @@ namespace Articulate.Controllers
         public IActionResult Index() => View();
         public AppEnv InstanceInfo([FromServices] AppEnv env)
         {
-            // env.AppName = $"{env.AppName}-{new Random().Next(1, 3)}";
-            // env.InstanceName = $"blah-{new Random().Next(1, 5)}";
             return env;
         }
         
