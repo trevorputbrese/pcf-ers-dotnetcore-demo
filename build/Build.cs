@@ -1,5 +1,7 @@
 using System.IO.Compression;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json.Linq;
+using NuGet.Configuration;
 using Nuke.Common;
 using Nuke.Common.Execution;
 using Nuke.Common.Git;
@@ -15,6 +17,7 @@ using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Utilities.Collections;
 using Octokit;
 using Serilog;
+using Tools.CloudFoundry;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.Docker.DockerTasks;
@@ -63,15 +66,13 @@ partial class Build : NukeBuild
     readonly string CfOrg;
     [Parameter("Cloud Foundry Space")]
     readonly string CfSpace;
-    [Parameter("Number of apps (for distributed tracing)")]
-    readonly int AppsCount = 3;    
     [Parameter("Type of database plan (default: db-small)")]
     readonly string DbPlan = "db-small";
     [Parameter("Type of SSO plan")]
     string SsoPlan = null;
 
-    [Parameter("Enable parallel push. Speeds things up, but logs from parallel pushes will get intermixed")] 
-    readonly bool FastPush;
+    [Parameter("Enable parallel push. Speeds things up, but logs are only output after all pushes are done")] 
+    readonly bool FastPush = true;
 
     
     string Runtime = "linux-x64";
@@ -159,14 +160,40 @@ partial class Build : NukeBuild
                 .SetOrg(CfOrg));
         });
 
-    
     Target Deploy => _ => _
         .DependsOn(CfLogin, CfTarget, Pack)
         .Description("Deploys {AppsCount} instances to Cloud Foundry /w all dependency services")
         .Executes(async () =>
         {
-            var names = Enumerable.Range(1, AppsCount).Select(x => $"ers{x}").ToArray();;
-            var marketplace = CloudFoundry("marketplace").StdToText();
+            var userProfileDir = (AbsolutePath)Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var cfConfigFile = userProfileDir / ".cf" / "config.json";
+            var cfConfig = JObject.Parse(File.ReadAllText(cfConfigFile));
+
+            var cliTargetOrg = cfConfig.SelectToken($"OrganizationFields.Name")?.Value<string>(); 
+            var cliTargetSpace = cfConfig.SelectToken($"SpaceFields.Name")?.Value<string>();
+            if (cliTargetOrg is null || cliTargetSpace is null)
+            {
+                Assert.Fail("CF CLI is not set to an org/space");
+            }
+            
+            var orgGuid = CloudFoundry($"org {cliTargetOrg} --guid", logOutput: false).StdToText();
+            string defaultDomain = CloudFoundryCurl(o => o
+                .SetPath($"/v3/organizations/{orgGuid}/domains/default")
+                .DisableProcessLogOutput())
+                .StdToJson<dynamic>().Name;
+            string defaultInternalDomain = CloudFoundryCurl(o => o
+                    .SetPath($"/v3/domains")
+                    .DisableProcessLogOutput())
+                .ReadPaged<dynamic>()
+                .Where(x => x.@internal == true)
+                .Select(x => x.name)
+                .First();
+
+            var green = "ers-green";
+            var blue = "ers-blue";
+            var backend = "ers-backend";
+            var names = new[] { green,blue };
+            var marketplace = CloudFoundry("marketplace", logOutput: false).StdToText();
             var hasMySql = marketplace.Contains("p.mysql");
             var hasDiscovery = marketplace.Contains("p.service-registry");
             var hasSso = marketplace.Contains("p-identity");
@@ -204,8 +231,7 @@ partial class Build : NukeBuild
                 CloudFoundryCreateService(c => c
                     .SetService("p-identity")
                     .SetPlan(SsoPlan)
-                    .SetInstanceName("sso")
-                    .SetConfigurationParameters(RootDirectory / "sso-binding.json"));
+                    .SetInstanceName("sso"));
             }
             else
             {
@@ -214,12 +240,36 @@ partial class Build : NukeBuild
             
             CloudFoundryPush(c => c
                 .EnableRandomRoute()
+                .EnableNoStart()
                 .SetPath(ArtifactsDirectory / PackageZipName)
-                .CombineWith(names,(cs,v) => cs.SetAppName(v)), degreeOfParallelism: FastPush ? AppsCount : 1);
+                .CombineWith(new[]{green, blue},(cs,v) => cs.SetAppName(v)), degreeOfParallelism: FastPush ? 3 : 1);
+
+            CloudFoundryPush(c => c
+                .SetAppName(backend)
+                .EnableNoRoute()
+                .EnableNoStart()
+                .SetPath(ArtifactsDirectory / PackageZipName)
+                .SetProcessEnvironmentVariable("ASPNETCORE_URLS", "http://0.0.0.0:8080;https://0.0.0.0:8443"));
+            
+
+            // CloudFoundryMapRoute(c => c
+            //     .SetDomain(defaultDomain)
+            //     .CombineWith(names, (cfg, app) => cfg
+            //         .SetAppName(app)
+            //         .SetHostname($"{app}-{CfSpace}-{CfOrg}"))); 
+            
+            CloudFoundryMapRoute(c => c
+                .SetDomain(defaultInternalDomain)
+                .SetAppName(backend)
+                .SetHostname($"{backend}-{cliTargetSpace}-{cliTargetOrg}"));
+
+            CloudFoundry($"add-network-policy {green} {backend} --port 8443 --protocol tcp"); // expose on ssl as well
+            CloudFoundry($"add-network-policy {blue} {backend} --port 8443 --protocol tcp"); // expose on ssl as well
+            
             await CloudFoundryEnsureServiceReady("eureka");
             await CloudFoundryEnsureServiceReady("mysql");
             await CloudFoundryEnsureServiceReady("sso");
-            foreach (var appName in names)
+            foreach (var appName in new []{blue,green,backend})
             {
                 var eurekaBound = CloudFoundryBindService(c => c
                     .SetServiceInstance("eureka")
@@ -233,6 +283,7 @@ partial class Build : NukeBuild
                     .Contains("already bound");
                 var ssoBound = CloudFoundryBindService(c => c
                         .SetServiceInstance("sso")
+                        .SetConfigurationParameters(RootDirectory / "sso-binding.json")
                         .SetAppName(appName))
                     .StdToText()
                     .Contains("already bound");
@@ -241,11 +292,16 @@ partial class Build : NukeBuild
                     CloudFoundryRestart(c => c
                         .SetAppName(appName));
                 }
+                else
+                {
+                    CloudFoundryStart(c => c
+                        .SetAppName(appName));
+                }
             }
         });
 
     Target Release => _ => _
-        .Description("Creates a GitHub release (or ammends existing) and uploads the artifact")
+        .Description("Creates a GitHub release (or amends existing) and uploads the artifact")
         .DependsOn(Publish)
         .Requires(() => GitHubToken)
         .Executes(async () =>

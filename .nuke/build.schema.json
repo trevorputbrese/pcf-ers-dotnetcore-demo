@@ -6,10 +6,6 @@
     "build": {
       "type": "object",
       "properties": {
-        "AppsCount": {
-          "type": "integer",
-          "description": "Number of apps (for distributed tracing)"
-        },
         "CfApiEndpoint": {
           "type": "string",
           "description": "Cloud Foundry Endpoint"
@@ -48,7 +44,7 @@
         },
         "FastPush": {
           "type": "boolean",
-          "description": "Enable parallel push. Speeds things up, but logs from parallel pushes will get intermixed"
+          "description": "Enable parallel push. Speeds things up, but logs are only output after all pushes are done"
         },
         "GitHubToken": {
           "type": "string",

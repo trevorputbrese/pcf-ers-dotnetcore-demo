@@ -5,7 +5,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <RootNamespace />
     <ImplicitUsings>true</ImplicitUsings>
-    <NoWarn>CS0649;CS0169</NoWarn>
+    <NoWarn>CS0649;CS0169;CS0436</NoWarn>
     <NukeRootDirectory>..</NukeRootDirectory>
     <NukeScriptDirectory>..</NukeScriptDirectory>
     <NukeTelemetryVersion>1</NukeTelemetryVersion>
@@ -23,6 +23,10 @@
     <Content Include="..\docker-compose.yml">
       <Link>config\docker-compose.yml</Link>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Nuke\Common\Tools" />
   </ItemGroup>
 
 </Project>

@@ -39,11 +39,11 @@
 						</tr>
 						</thead>
 						<tbody>
-						<tr v-for="si in instances">
-							<td>{{ si.name }}</td>
+						<tr v-for="(urls, name) in instances">
+							<td>{{ name }}</td>
 							<td>
 								<ul class="list-unstyled">
-									<li v-for="url in si.urls">{{ url }}</li>
+									<li v-for="url in urls">{{ url }}</li>
 								</ul>
 							</td>
 						</tr>
@@ -74,10 +74,10 @@ var pageModel = new Vue({
     el: '#page-body',
     data: {
     	app: {},
-        instances: [{
-			name: "test",
-			urls: ["http://localhost"]
-    	}],
+        instances: {
+			"test": [
+				"http://localhost"
+    		]},
     	response: ""
     },
     mounted: function() {
@@ -92,8 +92,7 @@ var pageModel = new Vue({
     methods: {
         pingAll: function () {
             var self = this;
-            var targets = self.instances
-				.map((el) => { return el.name }) 
+            var targets = Object.keys(self.instances)
 				.filter((el) => {
 					return el !== self.app.appName;
 				})
@@ -110,6 +109,7 @@ var pageModel = new Vue({
     		$.get("@Url.Action("GetServiceDiscoveryInstances","ServiceDiscovery")", function (results) {
 				self.instances = results;
     		});
+			setTimeout(() => self.refresh(), 1000);
 		}
     }
 });

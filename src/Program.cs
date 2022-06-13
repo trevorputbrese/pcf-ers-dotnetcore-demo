@@ -1,5 +1,7 @@
-﻿using System.Reflection;
+﻿using System.Net.Security;
+using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.RegularExpressions;
 using Articulate;
 using Articulate.Models;
 using Articulate.Repositories;
@@ -9,6 +11,7 @@ using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration.Memory;
+using Microsoft.Extensions.Options;
 using Steeltoe.Common.Http;
 using Steeltoe.Common.Http.Discovery;
 using Steeltoe.Common.Options;
@@ -28,13 +31,55 @@ using Steeltoe.Management.Endpoint;
 using Steeltoe.Management.TaskCore;
 using Steeltoe.Management.Tracing;
 using Steeltoe.Security.Authentication.CloudFoundry;
+using LocalCertificateWriter = Articulate.LocalCerts.LocalCertificateWriter;
 
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Configuration
-    .AddYamlFile("appsettings.yaml", false, true)
-    .AddYamlFile($"appsettings.{builder.Environment.EnvironmentName}.yaml", true, true)
-    .AddCloudFoundry();
+builder.WebHost.ConfigureKestrel(kestrel =>
+{
+    // we're doing some hacks with certs here when working locally to do pseudo SNI for c2c vs public routes, so we want to use 
+    kestrel.GetType().GetMethod("EnsureDefaultCert", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(kestrel, null);
+    var defaultCertificate = (X509Certificate2)kestrel.GetType().GetProperty("DefaultCertificate", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(kestrel);
+    kestrel.ConfigureHttpsDefaults(https =>
+    {
+        https.AllowAnyClientCertificate();
+
+        https.ServerCertificateSelector = (context, name) =>
+        {
+            if (name.EndsWith(".internal") || Regex.IsMatch(name, @"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"))
+            {
+                var cert = kestrel.ApplicationServices.GetService<IOptionsMonitor<CertificateOptions>>().CurrentValue.Certificate;
+                if (!System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                    return cert;
+
+                // Hack for Windoze Bug No credentials are available in the security package 
+                // SslStream not working with ephemeral keys
+                return new X509Certificate2(cert.Export(X509ContentType.Pkcs12));
+            }
+
+            return defaultCertificate;
+        };
+        // https.ServerCertificate = X509Certificate2.CreateFromPemFile(Environment.GetEnvironmentVariable("CF_INSTANCE_CERT"), Environment.GetEnvironmentVariable("CF_INSTANCE_KEY"));
+        https.ClientCertificateMode = ClientCertificateMode.AllowCertificate;
+    });
+});
+// when running locally, get config from <gitroot>/config folder
+if (!File.Exists("appsettings.yaml"))
+{
+    var configDir = "../config";
+    var appName = typeof(Program).Assembly.GetName().Name;
+    builder.Configuration
+        .AddYamlFile($"{configDir}/{appName}.yaml", false, true)
+        .AddYamlFile($"{configDir}/{appName}-{builder.Environment.EnvironmentName}.yaml", true, true);
+}
+else
+{
+    builder.Configuration
+        .AddYamlFile("appsettings.yaml", false, true)
+        .AddYamlFile($"appsettings.{builder.Environment.EnvironmentName}.yaml", true, true)
+        .AddCloudFoundry();
+}
+
 if (builder.Environment.IsDevelopment())
 {
     var task = new LocalCertificateWriter();
@@ -94,6 +139,7 @@ services.AddDbContext<AttendeeContext>(db =>
 services.AddTask<MigrateDbContextTask<AttendeeContext>>(ServiceLifetime.Scoped);
 
 services.AddDiscoveryClient();
+
 if (!isEurekaBound)
 {
     overrideProvider.Set("Eureka:Client:ShouldFetchRegistry","false");
@@ -136,15 +182,18 @@ services.PostConfigure<CertificateOptions>(opt =>
         opt.Certificate = new X509Certificate2(opt.Certificate.Export(X509ContentType.Pkcs12));
     }
 });
-services.AddSingleton<ClientCertificateHttpHandler>();
+services.AddTransient<ClientCertificateHttpHandler>();
 var httpClientBuilder = services.AddHttpClient("default")
     .ConfigurePrimaryHttpMessageHandler<ClientCertificateHttpHandler>()
     .AddServiceDiscovery();
+
 if (builder.Environment.IsDevelopment())
 {
-    services.AddSingleton<SimulatedClientCertInHeaderHttpHandler>();
+    services.AddTransient<SimulatedClientCertInHeaderHttpHandler>();
     httpClientBuilder.ConfigurePrimaryHttpMessageHandler<SimulatedClientCertInHeaderHttpHandler>();
 }
+
+
 
 services
     .AddControllersWithViews()

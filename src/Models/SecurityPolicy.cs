@@ -1,11 +1,10 @@
 ﻿using Steeltoe.Security.Authentication.CloudFoundry;
 
-namespace Articulate.Models
+namespace Articulate.Models;
+
+public class SecurityPolicy
 {
-    public class SecurityPolicy
-    {
-        public const string LoggedIn = "loggedin";
-        public const string SameSpace = CloudFoundryDefaults.SameSpaceAuthorizationPolicy;
+    public const string LoggedIn = "loggedin";
+    public const string SameSpace = CloudFoundryDefaults.SameSpaceAuthorizationPolicy;
         
-    }
 }

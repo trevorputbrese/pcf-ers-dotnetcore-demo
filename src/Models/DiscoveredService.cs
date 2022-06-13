@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 
-namespace Articulate.Models
+namespace Articulate.Models;
+
+public class DiscoveredService
 {
-    public class DiscoveredService
-    {
-        public string Name { get; set; }
-        public List<string> Urls { get; set; }
-    }
+    public string Name { get; set; }
+    public List<string> Urls { get; set; }
 }

@@ -32,6 +32,8 @@ services:
     ports:
       - "8761:8761"
     platform: linux
+    environment:
+      eureka_server_enableSelfPreservation: "false"
 
   spring-boot-admin:
     image: steeltoeoss/spring-boot-admin
