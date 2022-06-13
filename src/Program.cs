@@ -23,7 +23,9 @@ using Steeltoe.Connector.Services;
 using Steeltoe.Connector.MySql.EFCore;
 using Steeltoe.Connector.SqlServer;
 using Steeltoe.Connector.SqlServer.EFCore;
+using Steeltoe.Discovery;
 using Steeltoe.Discovery.Client;
+using Steeltoe.Discovery.Client.SimpleClients;
 using Steeltoe.Extensions.Configuration.CloudFoundry;
 using Steeltoe.Extensions.Configuration.Placeholder;
 using Steeltoe.Extensions.Configuration.RandomValue;
@@ -138,13 +140,21 @@ services.AddDbContext<AttendeeContext>(db =>
 });
 services.AddTask<MigrateDbContextTask<AttendeeContext>>(ServiceLifetime.Scoped);
 
-services.AddDiscoveryClient();
+services.AddTransient<ClientCertificateHttpHandler>();
+var httpClientBuilder = services.AddHttpClient("default")
+    .ConfigurePrimaryHttpMessageHandler<ClientCertificateHttpHandler>();
 
-if (!isEurekaBound)
+if (isEurekaBound)
 {
-    overrideProvider.Set("Eureka:Client:ShouldFetchRegistry","false");
-    overrideProvider.Set("Eureka:Client:ShouldRegisterWithEureka","false");
+    services.AddDiscoveryClient();
+    httpClientBuilder.AddServiceDiscovery();
 }
+else
+{
+    services.AddSingleton<IDiscoveryClient, ConfigurationDiscoveryClient>();
+}
+
+
 services.AddCloudFoundryContainerIdentity();
 services.AddAuthentication((options) =>
     {
@@ -176,16 +186,15 @@ services.AddAuthorization(cfg =>
 });
 services.PostConfigure<CertificateOptions>(opt =>
 {
-    if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+    if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) && opt.Certificate != null)
     {
         // work around bug when running on Windows
         opt.Certificate = new X509Certificate2(opt.Certificate.Export(X509ContentType.Pkcs12));
     }
 });
-services.AddTransient<ClientCertificateHttpHandler>();
-var httpClientBuilder = services.AddHttpClient("default")
-    .ConfigurePrimaryHttpMessageHandler<ClientCertificateHttpHandler>()
-    .AddServiceDiscovery();
+
+
+    
 
 if (builder.Environment.IsDevelopment())
 {
