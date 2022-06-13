@@ -51,8 +51,9 @@
   </Target>
   <ItemGroup>
 
-    <Content Include="appsettings.yaml" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="appsettings.Development.yaml" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Update="appsettings.yaml;appsettings.*.yaml" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+<!--    <None Update="appsettings.Development.yaml" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />-->
+<!--    <Content Include="appsettings.Backend.yaml" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />-->
   </ItemGroup>
   <ItemGroup>
     <Folder Include="GeneratedCertificates" />

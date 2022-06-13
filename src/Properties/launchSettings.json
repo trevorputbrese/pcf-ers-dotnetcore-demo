@@ -1,22 +1,40 @@
 {
   "profiles": {
-    "local-development": {
+    "vcap-blue": {
       "commandName": "Project",
-      "launchBrowser": true,
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-      },
-      "applicationUrl": "https://localhost:5001"
-      
-    },
-    "vcap": {
-      "commandName": "Project",
-      "launchBrowser": true,
+      "launchBrowser": false,
       "environmentVariables": {
         "VCAP_APPLICATION": "{   }",
         "ASPNETCORE_ENVIRONMENT": "Development",
+        "VCAP__APPLICATION__NAME": "ers-blue",
+        "Eureka__Instance__SecurePort": "5001"
       },
       "applicationUrl": "https://localhost:5001"
     },
+    "vcap-green": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "environmentVariables": {
+        "VCAP_APPLICATION": "{   }",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "VCAP__APPLICATION__NAME": "ers-green",
+        "Eureka__Instance__SecurePort": "5002"
+      },
+      "applicationUrl": "https://localhost:5002"
+    },
+    "vcap-backend": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "environmentVariables": {
+        "VCAP_APPLICATION": "{   }",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "SPRING__PROFILES__ACTIVE": "Backend",
+        "VCAP__APPLICATION__NAME": "ers-backend",
+        "Eureka__Instance__PreferIpAddress": "false",
+        "Eureka__Instance__SecureVipAddress": "localhost.internal",
+        "Eureka__Instance__HostName": "localhost.internal",
+      },
+      "applicationUrl": "https://localhost.internal:8443"
+    }
   }
 }

@@ -4,7 +4,7 @@ Eureka:
   Instance:
     IsNonSecurePortEnabled: false
     SecurePortEnabled: true
-    SecurePort: 65419
+#    SecurePort: 65419
     InstanceId: "${random:uuid}"
     HomePageUrlPath: "/"
     StatusPageUrlPath: "/"

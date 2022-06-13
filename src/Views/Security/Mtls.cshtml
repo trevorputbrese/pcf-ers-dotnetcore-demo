@@ -9,14 +9,20 @@
         <p>If it doesn't work, ensure that both apps are in same space, and the platform is configured to forward Client certs to the app. 
             <a href="https://docs.pivotal.io/application-service/2-12/concepts/http-routing.html">See docs for more info.</a> </p>
         <hr/>
-        <a href="#" class="btn btn-icon-split" v-bind:class="{ 'btn-secondary': backendReady, 'btn-warning': !backendReady}" v-on:click="sendRequest">
+        <a href="#" class="btn btn-icon-split" v-bind:class="{ 'btn-secondary': backendReady, 'btn-warning': !backendReady}" v-on:click="sendRequest(backendUrl)">
             <span class="icon text-white-50">
                 <i class="fas" v-bind:class="{ 'fa-exchange-alt': backendReady, 'fa-exclamation-triangle': !backendReady}"></i>
             </span>
-            <span class="text" v-if="backendReady">Send request</span>
+            <span class="text" v-if="backendReady">Send request to ers-backend</span>
             <span class="text" v-else="backendReady">Service 'ers-backend' is not running</span>
         </a>
-        
+        <a href="#" class="btn btn-icon-split" v-bind:class="{ 'btn-secondary': backendReady, 'btn-warning': !peerReady}" v-on:click="sendRequest(peerUrl)">
+            <span class="icon text-white-50">
+                <i class="fas" v-bind:class="{ 'fa-exchange-alt': peerReady, 'fa-exclamation-triangle': !peerReady}"></i>
+            </span>
+            <span class="text" v-if="peerReady">Send request to {{ peerName }} </span>
+            <span class="text" v-else="peerReady">Service {{ peerName }} is not running</span>
+        </a>
         <div class="col-sm"><pre>{{ response }}</pre></div>
 
     </div>
@@ -36,7 +42,9 @@ var pageModel = new Vue({
     	response: "",
     	backendReady: false,
     	backendUrl: "",
-    	
+    	peerName: "",
+    	peerReady: false,
+        peerUrl: "",
     },
     mounted: function() {
         var self = this;
@@ -48,12 +56,12 @@ var pageModel = new Vue({
         });
     },
     methods: {
-        sendRequest: function () {
+        sendRequest: function (url) {
             var self = this;
             if (!self.backendReady){
                 return;
             }
-            $.get("@Url.Action("CallUrl","Security")?url="+ self.backendUrl + "Security/SecuredByMtls", function (results) {
+            $.get("@Url.Action("CallUrl","Security")?url="+ url + "Security/SecuredByMtls", function (results) {
                 self.response = results;
             });
         },
@@ -61,8 +69,16 @@ var pageModel = new Vue({
             		var self = this;
             		$.get("@Url.Action("GetServiceDiscoveryInstances","ServiceDiscovery")", function (results) {
         				self.instances = results;
+                        self.peerName = self.app.appName === "ers-green" ? "ers-blue" : "ers-green";
+                        var peer = self.instances[self.peerName];
+                        self.peerReady = peer !== undefined;
+                        if (self.peerReady){
+                            self.peerUrl = peer[0];
+                        }
+                        console.log(self.peerUrl);
+                        
                         var backend = self.instances["ers-backend"];
-                        self.backendReady = self.instances["ers-backend"] !== undefined;
+                        self.backendReady = backend !== undefined;
                         if (self.backendReady){
                             self.backendUrl = backend[0];
                         }

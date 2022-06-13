@@ -33,6 +33,7 @@ using Steeltoe.Management.Endpoint;
 using Steeltoe.Management.TaskCore;
 using Steeltoe.Management.Tracing;
 using Steeltoe.Security.Authentication.CloudFoundry;
+using Steeltoe.Discovery.Eureka;
 using LocalCertificateWriter = Articulate.LocalCerts.LocalCertificateWriter;
 
 
@@ -56,7 +57,14 @@ builder.WebHost.ConfigureKestrel(kestrel =>
 
                 // Hack for Windoze Bug No credentials are available in the security package 
                 // SslStream not working with ephemeral keys
-                return new X509Certificate2(cert.Export(X509ContentType.Pkcs12));
+                try
+                {
+                    return new X509Certificate2(cert.Export(X509ContentType.Pkcs12));
+                }
+                catch (Exception)
+                {
+                    return defaultCertificate;
+                }
             }
 
             return defaultCertificate;
@@ -66,21 +74,33 @@ builder.WebHost.ConfigureKestrel(kestrel =>
     });
 });
 // when running locally, get config from <gitroot>/config folder
-if (!File.Exists("appsettings.yaml"))
-{
-    var configDir = "../config";
-    var appName = typeof(Program).Assembly.GetName().Name;
-    builder.Configuration
-        .AddYamlFile($"{configDir}/{appName}.yaml", false, true)
-        .AddYamlFile($"{configDir}/{appName}-{builder.Environment.EnvironmentName}.yaml", true, true);
-}
-else
-{
-    builder.Configuration
-        .AddYamlFile("appsettings.yaml", false, true)
-        .AddYamlFile($"appsettings.{builder.Environment.EnvironmentName}.yaml", true, true)
-        .AddCloudFoundry();
-}
+string configDir = "../config/";
+var appName = typeof(Program).Assembly.GetName().Name;
+builder.Configuration
+    .AddYamlFile("appsettings.yaml", false, true)
+    .AddYamlFile($"appsettings.{builder.Environment.EnvironmentName}.yaml", true, true)
+    .AddYamlFile($"{configDir}{appName}.yaml", true, true)
+    .AddYamlFile($"{configDir}{appName}-{builder.Environment.EnvironmentName}.yaml", true, true)
+    .AddProfiles(configDir)
+    .AddEnvironmentVariables();
+// if (!File.Exists("appsettings.yaml"))
+// {
+//     configDir = "../config/";
+//     var appName = typeof(Program).Assembly.GetName().Name;
+//     builder.Configuration
+//         .AddYamlFile($"{configDir}{appName}.yaml", true, true)
+//         .AddYamlFile($"{configDir}{appName}-{builder.Environment.EnvironmentName}.yaml", true, true);
+// }
+// else
+// {
+//     builder.Configuration
+//         .AddYamlFile("appsettings.yaml", false, true)
+//         .AddYamlFile($"appsettings.{builder.Environment.EnvironmentName}.yaml", true, true);
+// }
+builder.Configuration
+    .AddCloudFoundry()
+    .AddProfiles(configDir)
+    .AddEnvironmentVariables();
 
 if (builder.Environment.IsDevelopment())
 {
@@ -140,14 +160,31 @@ services.AddDbContext<AttendeeContext>(db =>
 });
 services.AddTask<MigrateDbContextTask<AttendeeContext>>(ServiceLifetime.Scoped);
 
-services.AddTransient<ClientCertificateHttpHandler>();
-var httpClientBuilder = services.AddHttpClient("default")
-    .ConfigurePrimaryHttpMessageHandler<ClientCertificateHttpHandler>();
 
+services.AddTransient<TasClientCertificateHttpHandler>();
+
+var httpClientBuilder = services.AddHttpClient("default")
+    .ConfigurePrimaryHttpMessageHandler<TasClientCertificateHttpHandler>();
+
+var config = builder.Configuration;
 if (isEurekaBound)
 {
     services.AddDiscoveryClient();
     httpClientBuilder.AddServiceDiscovery();
+    services.PostConfigure<EurekaInstanceOptions>(c =>
+    {
+        if (c.RegistrationMethod == "direct")
+        {
+            config.Bind("Eureka:Instance", c);
+            // c.SecurePort = config.GetValue<int?>("Eureka:Instance:SecurePort") ?? 8443;
+            // if (builder.Environment.IsDevelopment())
+            // {
+            //     c.PreferIpAddress = false;
+            //     c.SecureVipAddress = 
+            //     c.InstanceId = Guid.NewGuid().ToString();
+            // }
+        }
+    });
 }
 else
 {

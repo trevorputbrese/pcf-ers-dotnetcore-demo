@@ -91,6 +91,18 @@
                 </div>
                 <div class="row">
                     <div class="col-sm">
+                        <strong>Environment:</strong>
+                    </div>
+                    <div class="col-sm">{{ app.environment }}</div>
+                </div>
+                <div class="row">
+                    <div class="col-sm">
+                        <strong>Profiles:</strong>
+                    </div>
+                    <div class="col-sm">{{ app.profiles }}</div>
+                </div>
+                <div class="row">
+                    <div class="col-sm">
                         <strong>Instance ID:</strong>
                     </div>
                     <div class="col-sm">{{ app.instanceName == '-1' || app.instanceName == '' ? '--' : app.instanceName }}</div>

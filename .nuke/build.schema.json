@@ -42,10 +42,6 @@
           "type": "string",
           "description": "Type of database plan (default: db-small)"
         },
-        "FastPush": {
-          "type": "boolean",
-          "description": "Enable parallel push. Speeds things up, but logs are only output after all pushes are done"
-        },
         "GitHubToken": {
           "type": "string",
           "description": "GitHub personal access token with access to the repo"
@@ -114,6 +110,7 @@
               "Clean",
               "Compile",
               "Deploy",
+              "DeployFull",
               "Pack",
               "Publish",
               "Release",
@@ -143,6 +140,7 @@
               "Clean",
               "Compile",
               "Deploy",
+              "DeployFull",
               "Pack",
               "Publish",
               "Release",
