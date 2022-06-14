@@ -6,6 +6,10 @@
     "build": {
       "type": "object",
       "properties": {
+        "AppName": {
+          "type": "string",
+          "description": "App Name for inner loop"
+        },
         "CfApiEndpoint": {
           "type": "string",
           "description": "Cloud Foundry Endpoint"
@@ -70,6 +74,10 @@
             "VSCode"
           ]
         },
+        "InternalDomain": {
+          "type": "string",
+          "description": "Internal domain for c2c"
+        },
         "NoLogo": {
           "type": "boolean",
           "description": "Disables displaying the NUKE logo"
@@ -93,6 +101,10 @@
             "type": "string"
           }
         },
+        "PublicDomain": {
+          "type": "string",
+          "description": "Public domain to assign to apps. Optional"
+        },
         "Root": {
           "type": "string",
           "description": "Root directory during build execution"
@@ -109,8 +121,12 @@
               "CfTarget",
               "Clean",
               "Compile",
+              "CreateDeploymentPlan",
+              "DeleteApps",
               "Deploy",
               "DeployFull",
+              "EnsureCfCurrentTarget",
+              "InnerLoop",
               "Pack",
               "Publish",
               "Release",
@@ -139,8 +155,12 @@
               "CfTarget",
               "Clean",
               "Compile",
+              "CreateDeploymentPlan",
+              "DeleteApps",
               "Deploy",
               "DeployFull",
+              "EnsureCfCurrentTarget",
+              "InnerLoop",
               "Pack",
               "Publish",
               "Release",

@@ -17,6 +17,9 @@
     <PackageDownload Include="CloudFoundry.CommandLine.linux-x64" Version="[7.4.1]" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
     <PackageDownload Include="CloudFoundry.CommandLine.osx-x64" Version="[7.4.1]" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
     <PackageDownload Include="CloudFoundry.CommandLine.win-x64" Version="[7.4.1]" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
+    <PackageDownload Include="Tilt.CommandLine.linux-x64" Version="[0.23.0]" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
+    <PackageDownload Include="Tilt.CommandLine.osx-x64" Version="[0.23.0]" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
+    <PackageDownload Include="Tilt.CommandLine.win-x64" Version="[0.23.0]" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
   </ItemGroup>
 
   <ItemGroup>

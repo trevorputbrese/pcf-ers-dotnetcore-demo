@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Diagnostics;
 using System.IO.Compression;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
@@ -63,19 +65,29 @@ partial class Build : NukeBuild
     [Parameter("Cloud Foundry Endpoint")]
     readonly string CfApiEndpoint;
     [Parameter("Cloud Foundry Org")]
-    readonly string CfOrg;
+    string CfOrg;
     [Parameter("Cloud Foundry Space")]
-    readonly string CfSpace;
+    string CfSpace;
+    [Parameter("App Name for inner loop")]
+    string AppName = "ers";
     [Parameter("Type of database plan (default: db-small)")]
     readonly string DbPlan = "db-small";
     [Parameter("Type of SSO plan")]
     string SsoPlan = null;
+    [Parameter("Internal domain for c2c")]
+    string InternalDomain = null;
+    [Parameter("Public domain to assign to apps. Optional")]
+    string PublicDomain = null;
 
     string Runtime = "linux-x64";
+    string AssemblyName = "Articulate";
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
     AbsolutePath PublishDirectory => RootDirectory / "src" / "bin" / Configuration / Framework / Runtime  / "publish";
     string PackageZipName => $"articulate-{GitVersion.MajorMinorPatch}.zip";
+
+    AppDeployment[] Apps;
+    AppDeployment Green, Blue, Backend;
 
     
     Target Clean => _ => _
@@ -159,6 +171,43 @@ partial class Build : NukeBuild
                 .SetOrg(CfOrg));
         });
 
+    Target InnerLoop => _ => _
+        .Requires(() => AppName)
+        .Executes(async () =>
+        {
+            var currentEnvVars = Environment.GetEnvironmentVariables()
+                .Cast<DictionaryEntry>()
+                .ToDictionary(x => (string)x.Key, x => (string)x.Value);
+            string os = "";
+            if (OperatingSystem.IsWindows())
+                os = "win";
+            else if (OperatingSystem.IsLinux())
+                os = "linux";
+            else
+                os = "osx";
+            var tilt = ToolPathResolver.GetPackageExecutable($"Tilt.CommandLine.{os}-x64", "tilt" + (OperatingSystem.IsWindows() ? ".exe" : ""));
+            var tiltProcess = ProcessTasks.StartProcess(tilt, "up", 
+                workingDirectory: RootDirectory, 
+                environmentVariables: new Dictionary<string, string>(currentEnvVars)
+                {
+                    {"APP_NAME", AppName},
+                    {"APP_DIR", "./src"},
+                    {"CF_PUSH_INIT", "true"},
+                    {"AssemblyName", AssemblyName},
+                    // {"PUSH_PATH", "."},
+                    // {"PUSH_COMMAND", $"cd ${{HOME}} && ./watchexec --ignore *.yaml --restart --watch . 'dotnet {AssemblyName}.dll --urls http://0.0.0.0:8080'"},
+                    {"TILT_WATCH_WINDOWS_BUFFER_SIZE", "555555"}
+                });
+            await Task.Delay(3000);
+            var tiltPsi = new ProcessStartInfo
+            {
+                FileName = "http://localhost:10350",
+                UseShellExecute = true
+            };
+            Process.Start(tiltPsi);
+            
+            tiltProcess.WaitForExit();
+        });
 
     struct AppDeployment
     {
@@ -176,31 +225,28 @@ partial class Build : NukeBuild
         {
             
         });
-    Target Deploy => _ => _
-        .After(CfLogin, CfTarget)
-        .DependsOn(Pack)
-        .Description("Deploys {AppsCount} instances to Cloud Foundry /w all dependency services into current target set by cli")
-        .Executes(async () =>
+
+
+    Target EnsureCfCurrentTarget => _ => _
+        .After(CfTarget, Pack)
+        .Executes(() =>
         {
             var userProfileDir = (AbsolutePath)Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             var cfConfigFile = userProfileDir / ".cf" / "config.json";
             var cfConfig = JObject.Parse(File.ReadAllText(cfConfigFile));
 
-            var cliTargetOrg = cfConfig.SelectToken($"OrganizationFields.Name")?.Value<string>(); 
-            var cliTargetSpace = cfConfig.SelectToken($"SpaceFields.Name")?.Value<string>();
-            if (cliTargetOrg is null || cliTargetSpace is null)
+            CfOrg = cfConfig.SelectToken($"OrganizationFields.Name")?.Value<string>(); 
+            CfSpace = cfConfig.SelectToken($"SpaceFields.Name")?.Value<string>();
+            if (CfOrg is null || CfSpace is null)
             {
                 Assert.Fail("CF CLI is not set to an org/space");
             }
-            
-            
-            
-            var orgGuid = CloudFoundry($"org {cliTargetOrg} --guid", logOutput: false).StdToText();
-            string defaultDomain = CloudFoundryCurl(o => o
-                .SetPath($"/v3/organizations/{orgGuid}/domains/default")
-                .DisableProcessLogOutput())
+            var orgGuid = CloudFoundry($"org {CfOrg} --guid", logOutput: false).StdToText();
+            PublicDomain = CloudFoundryCurl(o => o
+                    .SetPath($"/v3/organizations/{orgGuid}/domains/default")
+                    .DisableProcessLogOutput())
                 .StdToJson<dynamic>().name;
-            string defaultInternalDomain = CloudFoundryCurl(o => o
+            InternalDomain = CloudFoundryCurl(o => o
                     .SetPath($"/v3/domains")
                     .DisableProcessLogOutput())
                 .ReadPaged<dynamic>()
@@ -208,28 +254,58 @@ partial class Build : NukeBuild
                 .Select(x => x.name)
                 .First();
             
-            Assert.True(defaultDomain != null);
-            Assert.True(defaultInternalDomain != null);
+            Assert.True(PublicDomain != null);
+            Assert.True(InternalDomain != null);
+        });
 
-            var green = new AppDeployment
+    Target CreateDeploymentPlan => _ => _
+        .Unlisted()
+        .DependsOn(EnsureCfCurrentTarget)
+        .Executes(() =>
+        {
+            Green = new AppDeployment
             {
                 Name = "ers-green",
-                Org = cliTargetOrg,
-                Space = cliTargetSpace,
-                Domain = defaultDomain
+                Org = CfOrg,
+                Space = CfSpace,
+                Domain = PublicDomain
             };
-            var blue = green;
-            blue.Name = "ers-blue";
+            Blue = Green;
+            Blue.Name = "ers-blue";
 
-            var backend = green;
-            backend.Name = "ers-backend";
-            backend.Domain = defaultInternalDomain;
-            backend.IsInternal = true;
+            Backend = Green;
+            Backend.Name = "ers-backend";
+            Backend.Domain = InternalDomain;
+            Backend.IsInternal = true;
+            Apps = new[] { Green, Blue, Backend };
+        });
+    Target Deploy => _ => _
+        .After(CfLogin, CfTarget)
+        .DependsOn(Pack, EnsureCfCurrentTarget, CreateDeploymentPlan)
+        .Description("Deploys {AppsCount} instances to Cloud Foundry /w all dependency services into current target set by cli")
+        .Executes(async () =>
+        {
+            // var orgGuid = CloudFoundry($"org {CfOrg} --guid", logOutput: false).StdToText();
+            // string defaultDomain = CloudFoundryCurl(o => o
+            //     .SetPath($"/v3/organizations/{orgGuid}/domains/default")
+            //     .DisableProcessLogOutput())
+            //     .StdToJson<dynamic>().name;
+            // string defaultInternalDomain = CloudFoundryCurl(o => o
+            //         .SetPath($"/v3/domains")
+            //         .DisableProcessLogOutput())
+            //     .ReadPaged<dynamic>()
+            //     .Where(x => x.@internal == true)
+            //     .Select(x => x.name)
+            //     .First();
+            //
+            // Assert.True(defaultDomain != null);
+            // Assert.True(defaultInternalDomain != null);
+
+            
 
             // var green = "ers-green";
             // var blue = "ers-blue";
             // var backend = "ers-backend";
-            var apps = new[] { green,blue, backend };
             var marketplace = CloudFoundry("marketplace", logOutput: false).StdToText();
             var hasMySql = marketplace.Contains("p.mysql");
             var hasDiscovery = marketplace.Contains("p.service-registry");
@@ -280,7 +356,7 @@ partial class Build : NukeBuild
                 .EnableNoStart()
                 .SetMemory("384M")
                 .SetPath(ArtifactsDirectory / PackageZipName)
-                .CombineWith(apps,(push,app) =>
+                .CombineWith(Apps,(push,app) =>
                 {
                     
                     push = push
@@ -294,12 +370,12 @@ partial class Build : NukeBuild
 
             // bind backend to both regular 8080 http port and 8443 which can be accessed directly by other apps bypassing gorouter
             CloudFoundrySetEnv(c => c
-                .SetAppName(backend.Name)
+                .SetAppName(Backend.Name)
                 .SetEnvVarName("ASPNETCORE_URLS")
                 .SetEnvVarValue("http://0.0.0.0:8080;https://0.0.0.0:8443")); 
             
             CloudFoundrySetEnv(c => c
-                .SetAppName(backend.Name)
+                .SetAppName(Backend.Name)
                 .SetEnvVarName("SPRING__PROFILES__ACTIVE")
                 .SetEnvVarValue("Backend")); 
             
@@ -318,54 +394,51 @@ partial class Build : NukeBuild
             //         .SetHostname($"{app}-{CfSpace}-{CfOrg}"))); 
             
             CloudFoundryMapRoute(c => c
-                .CombineWith(apps, (cf,app) => cf
+                .CombineWith(Apps, (cf,app) => cf
                     .SetAppName(app.Name)
                     .SetDomain(app.Domain)
                     .SetHostname(app.Hostname))
                 , degreeOfParallelism: 3);
 
-            CloudFoundry($"add-network-policy {green.Name} {backend.Name} --port 8443 --protocol tcp"); // expose on ssl as well
-            CloudFoundry($"add-network-policy {blue.Name} {backend.Name} --port 8443 --protocol tcp"); // expose on ssl as well
+            CloudFoundry($"add-network-policy {Green.Name} {Backend.Name} --port 8443 --protocol tcp"); // expose on ssl as well
+            CloudFoundry($"add-network-policy {Blue.Name} {Backend.Name} --port 8443 --protocol tcp"); // expose on ssl as well
             
             await CloudFoundryEnsureServiceReady("eureka");
             await CloudFoundryEnsureServiceReady("mysql");
             await CloudFoundryEnsureServiceReady("sso");
 
-            foreach (var app in apps)
-            {
-                var eurekaBound = CloudFoundryBindService(c => c
-                    .SetServiceInstance("eureka")
-                    .SetAppName(app.Name))
-                    .StdToText()
-                    .Contains("already bound");
-                var mySqlBound = CloudFoundryBindService(c => c
-                        .SetServiceInstance("mysql")
-                        .SetAppName(app.Name))
-                    .StdToText()
-                    .Contains("already bound");
-                
-                var ssoBound = CloudFoundryBindService(c => c
-                        .SetServiceInstance("sso")
-                        .SetConfigurationParameters(RootDirectory / "sso-binding.json")
-                        .SetAppName(app.Name))
-                    .StdToText()
-                    .Contains("already bound");
-                // if (!eurekaBound || !mySqlBound || !ssoBound)
-                // {
-                //     CloudFoundryRestart(c => c
-                //         .SetAppName(appName));
-                // }
-                // else
-                // {
-                //     CloudFoundryStart(c => c
-                //         .SetAppName(appName));
-                // }
-            }
+            
+            CloudFoundryBindService(c => c
+                .SetServiceInstance("eureka")
+                .CombineWith(Apps, (cf,app) => cf
+                    .SetAppName(app.Name)), degreeOfParallelism: 3);
+
+            CloudFoundryBindService(c => c
+                .SetServiceInstance("mysql")
+                .CombineWith(Apps, (cf, app) => cf
+                    .SetAppName(app.Name)), degreeOfParallelism: 3);
+
+            CloudFoundryBindService(c => c
+                .SetServiceInstance("sso")
+                .SetConfigurationParameters(RootDirectory / "sso-binding.json")
+                .CombineWith(Apps, (cf, app) => cf
+                    .SetAppName(app.Name)), degreeOfParallelism: 3);
+            
 
             CloudFoundryStart(c => c
-                .CombineWith(apps, (cf, app) => cf
-                    .SetAppName(app.Name))
-                , degreeOfParallelism: 3);
+                .CombineWith(Apps, (cf, app) => cf
+                    .SetAppName(app.Name)), degreeOfParallelism: 3);
+        });
+
+    Target DeleteApps => _ => _
+        .After(CfLogin, CfTarget)
+        .DependsOn(EnsureCfCurrentTarget, CreateDeploymentPlan)
+        .Executes(() =>
+        {
+            CloudFoundryDeleteApplication(c => c
+                .EnableDeleteRoutes()
+                .CombineWith(Apps, (cf, app) => cf
+                    .SetAppName(app.Name)));
         });
 
     Target Release => _ => _

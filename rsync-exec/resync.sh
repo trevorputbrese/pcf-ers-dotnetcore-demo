@@ -1,9 +1,11 @@
-CF_APP=$(yq '.applications[0].name' /app/manifest.yaml)
-appid=$(cf app $CF_APP --guid)
+if [[ -z "${APP_NAME}" ]]; then
+  APP_NAME=$(yq '.applications[0].name' /app/manifest.yaml)
+fi
+appid=$(cf app $APP_NAME --guid)
 sshendpoint=$(cf curl /v2/info | jq -r .app_ssh_endpoint | awk -F: '{print $1}')
 if [ $appid == *"not found"* ]; then
     cd /app
-    cf push $CF_APP 
+    cf push $APP_NAME 
 fi
 
 

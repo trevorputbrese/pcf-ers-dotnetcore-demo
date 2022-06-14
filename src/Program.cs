@@ -83,20 +83,7 @@ builder.Configuration
     .AddYamlFile($"{configDir}{appName}-{builder.Environment.EnvironmentName}.yaml", true, true)
     .AddProfiles(configDir)
     .AddEnvironmentVariables();
-// if (!File.Exists("appsettings.yaml"))
-// {
-//     configDir = "../config/";
-//     var appName = typeof(Program).Assembly.GetName().Name;
-//     builder.Configuration
-//         .AddYamlFile($"{configDir}{appName}.yaml", true, true)
-//         .AddYamlFile($"{configDir}{appName}-{builder.Environment.EnvironmentName}.yaml", true, true);
-// }
-// else
-// {
-//     builder.Configuration
-//         .AddYamlFile("appsettings.yaml", false, true)
-//         .AddYamlFile($"appsettings.{builder.Environment.EnvironmentName}.yaml", true, true);
-// }
+
 builder.Configuration
     .AddCloudFoundry()
     .AddProfiles(configDir)
