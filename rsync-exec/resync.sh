@@ -1,3 +1,4 @@
+#!/bin/bash
 if [[ -z "${APP_NAME}" ]]; then
   APP_NAME=$(yq '.applications[0].name' /app/manifest.yaml)
 fi

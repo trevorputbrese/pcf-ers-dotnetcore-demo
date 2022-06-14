@@ -1,10 +1,8 @@
 version: '3.0'
 services:
   sync:
-#    build: ./rsync-exec
     image: ${APP_NAME}:live-sync
     volumes:
-      #- ./sample/bin/Debug/net6.0/linux-x64/publish:/sync
       - ~/.cf:/root/.cf
       - ${APP_DIR}:/app
       - ${APP_DIR}/bin/.buildsync:/syncorig # work around sync folder being available during first build inside /syncorig and then updated by tilt during livesync into /sync
@@ -12,4 +10,3 @@ services:
       APP_NAME: ${APP_NAME}
       AssemblyName: ${AssemblyName}
       CF_PUSH_INIT: ${CF_PUSH_INIT}
-#    env_file: .env

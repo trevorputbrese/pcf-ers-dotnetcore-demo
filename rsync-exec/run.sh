@@ -1,5 +1,4 @@
 #!/bin/bash
-#echo HELLO $PUSH_COMMAND
 if [[ -z "${APP_NAME}" ]]; then
   APP_NAME=$(yq '.applications[0].name' /app/manifest.yaml)
 fi
@@ -8,9 +7,7 @@ appid=$(cf app $APP_NAME --guid)
 if [ $appid == *"not found"* ] || [ "$CF_PUSH_INIT" == "true" ]; then
     echo ======== Pushing app ======
     cd /syncorig
-    #cfpush="cf push $APP_NAME -p /syncorig -c \"$PUSH_COMMAND\""
-    #echo hi $cfpush
-    #eval $cfpush
+
     cf push $APP_NAME -p /syncorig -f manifest-tilt.yml --var "AssemblyName=$AssemblyName"
     cd .. 
 else

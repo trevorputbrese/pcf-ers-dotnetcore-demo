@@ -73,11 +73,15 @@ partial class Build : NukeBuild
     [Parameter("Type of database plan (default: db-small)")]
     readonly string DbPlan = "db-small";
     [Parameter("Type of SSO plan")]
-    string SsoPlan = null;
-    [Parameter("Internal domain for c2c")]
+    string SsoPlan;
+    [Parameter("Internal domain for c2c. Optional")]
     string InternalDomain = null;
     [Parameter("Public domain to assign to apps. Optional")]
-    string PublicDomain = null;
+    string PublicDomain;
+    [Parameter("Trigger to use to trigger live sync (Build or Source. Default to Source)")]
+    SyncTrigger SyncTrigger = SyncTrigger.Source;
+
+
 
     string Runtime = "linux-x64";
     string AssemblyName = "Articulate";
@@ -192,6 +196,7 @@ partial class Build : NukeBuild
                 {
                     {"APP_NAME", AppName},
                     {"APP_DIR", "./src"},
+                    {"SYNC_TRIGGER", SyncTrigger.ToString().ToLower()},
                     {"CF_PUSH_INIT", "true"},
                     {"AssemblyName", AssemblyName},
                     // {"PUSH_PATH", "."},
@@ -515,4 +520,9 @@ partial class Build : NukeBuild
             DockerKill(c => c
                 .SetContainers(containerName));
         });
+}
+enum SyncTrigger
+{
+    Build,
+    Source
 }

@@ -3,7 +3,7 @@ os.putenv ("DOCKER_BUILDKIT" , "1" )
 appName = os.getenv("APP_NAME")
 appFolder = os.getenv("APP_DIR")
 
-trigger="source" # use "build" to trigger deploy after compiling locally. use "source" to trigger on any file change
+trigger=os.getenv("SYNC_TRIGGER") # use "build" to trigger deploy after compiling locally. use "source" to trigger on any file change
 rid = "linux-x64"
 configuration = "Debug"
 

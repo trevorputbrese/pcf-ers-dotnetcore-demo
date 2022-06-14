@@ -83,7 +83,7 @@ builder.Configuration
     .AddYamlFile($"{configDir}{appName}-{builder.Environment.EnvironmentName}.yaml", true, true)
     .AddProfiles(configDir)
     .AddEnvironmentVariables();
-
+Console.WriteLine("====test123");
 builder.Configuration
     .AddCloudFoundry()
     .AddProfiles(configDir)
@@ -163,13 +163,6 @@ if (isEurekaBound)
         if (c.RegistrationMethod == "direct")
         {
             config.Bind("Eureka:Instance", c);
-            // c.SecurePort = config.GetValue<int?>("Eureka:Instance:SecurePort") ?? 8443;
-            // if (builder.Environment.IsDevelopment())
-            // {
-            //     c.PreferIpAddress = false;
-            //     c.SecureVipAddress = 
-            //     c.InstanceId = Guid.NewGuid().ToString();
-            // }
         }
     });
 }

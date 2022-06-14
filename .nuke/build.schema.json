@@ -76,7 +76,7 @@
         },
         "InternalDomain": {
           "type": "string",
-          "description": "Internal domain for c2c"
+          "description": "Internal domain for c2c. Optional"
         },
         "NoLogo": {
           "type": "boolean",
@@ -142,6 +142,14 @@
         "SsoPlan": {
           "type": "string",
           "description": "Type of SSO plan"
+        },
+        "SyncTrigger": {
+          "type": "string",
+          "description": "Trigger to use to trigger live sync (Build or Source. Default to Source)",
+          "enum": [
+            "Build",
+            "Source"
+          ]
         },
         "Target": {
           "type": "array",

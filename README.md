@@ -16,13 +16,13 @@ This base application is intended to demonstrate functionality of TAS:
 * SSO integration
 * mTLS using container certificates
 
-The app can be deployed without any dependencies, but some demos require additional services to work.
+The app can be deployed without any dependencies, but some demos require additional services to work. Instructions are embedded into the app itself.
 
 Note: The app uses additional logic to automatically reconfigure itself based on service bindings to allow it to function without any dependencies. Many statements in startup configuration code would not normally exist for real app since lack of services is usually a fatal condition. 
 
 ## Getting Started
 
-**Build automation script**
+### Build automation script
 
 The app comes with build automation scripts that will help do a number of build targets (aka tasks). Each target, can be invoked by running `build.ps1` or `build.sh` followed by target name and optional parameters. Example:
 
@@ -32,7 +32,7 @@ The app comes with build automation scripts that will help do a number of build 
 
 All available targets are available by running `\build.ps1` with no args
 
-**Included targets**
+### Included targets
 
 - `Publish` - compile the app targeting `linux-x64` - suitable for deployment to TAS. The manifest in root of the repo already points to folder where output of publish command is placed. A basic `cf push` demo can be done just by executing the following from root:
 
@@ -53,7 +53,15 @@ All available targets are available by running `\build.ps1` with no args
 
 
 
-## SSO Demo
+### SSO Demo
 
 To demo SSO, you need to setup SSO plan to show up in marketplace. If you only have a single plan, it will be automatically determined, otherwise use `--sso-plan` argument to specify which plan to use. The demo configures each app to use an identity provider for the plan called `gcp` for demoing using SSO tile to integrate with Google as identity provider. You can change the name of the SSO identity provider to use via `sso-binding.json` file. 
+
+## Inner loop demo
+
+You can do a TAP style inner-loop workflow using provided Tilt configuration. Changes to local system are automatically synchronized to remote container by copying over delta files and restarting the process without doing a full "push", greatly speeding up the feedback cycle. First time always results in a full push
+
+Start by executing `build.ps1 --sync-trigger Source` to synchronize with remote instance whenever local source code changes.
+
+Alternatively, use  `build.ps1 --sync-trigger Build` to synchronize with remote instance whenever a local build is triggered
 
