@@ -52,7 +52,7 @@
   <ItemGroup Condition="$(LiveSync)=='true'">
     <None Include="..\packages\watchexec" CopyToPublishDirectory="Always"/>
     <None Include="..\manifest-tilt.yml" CopyToPublishDirectory="Always"/>
-    <None Include="..\.gitignore" CopyToPublishDirectory="Always"/>
+    <None Include=".ignore"  CopyToPublishDirectory="Always"/>
   </ItemGroup>
   <ItemGroup>
     
