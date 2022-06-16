@@ -36,7 +36,7 @@ using Steeltoe.Security.Authentication.CloudFoundry;
 using Steeltoe.Discovery.Eureka;
 using LocalCertificateWriter = Articulate.LocalCerts.LocalCertificateWriter;
 
-
+Console.WriteLine("==== App is starting.... ====");
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.ConfigureKestrel(kestrel =>
 {
@@ -83,7 +83,6 @@ builder.Configuration
     .AddYamlFile($"{configDir}{appName}-{builder.Environment.EnvironmentName}.yaml", true, true)
     .AddProfiles(configDir)
     .AddEnvironmentVariables();
-Console.WriteLine("====test123");
 builder.Configuration
     .AddCloudFoundry()
     .AddProfiles(configDir)
