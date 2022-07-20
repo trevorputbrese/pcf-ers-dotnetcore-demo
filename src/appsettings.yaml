@@ -1,8 +1,6 @@
 ﻿---
 "$schema": https://steeltoe.io/schema/latest/schema.json
 Spring:
-  Application:
-    Name: ERS
   boot:
     admin:
       client:
@@ -38,3 +36,11 @@ Eureka:
   Client:
     Validate_certificates: false
     ShouldRegisterWithEureka: true
+Discovery:
+  Services:
+  - ServiceId: ers-blue
+    Host: localhost
+    Port: 5001
+  - ServiceId: ers-green
+    Host: localhost
+    Port: 5000

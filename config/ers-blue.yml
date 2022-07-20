@@ -1,3 +1,2 @@
 ﻿---
-"$schema": https://raw.githubusercontent.com/steeltoeoss-incubator/steeltoe-schema/master/schema.json
-Environment: blue
+LightsaberColor: Blue

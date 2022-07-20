@@ -28,8 +28,9 @@
     <PackageReference Include="Steeltoe.Common.Hosting" Version="$(SteeltoeVersion)" />
     <PackageReference Include="Steeltoe.Discovery.Eureka" Version="$(SteeltoeVersion)" />
     <PackageReference Include="Steeltoe.Extensions.Configuration.CloudFoundryCore" Version="$(SteeltoeVersion)" />
+    <PackageReference Include="Steeltoe.Extensions.Configuration.ConfigServerCore" Version="$(SteeltoeVersion)" />
     <PackageReference Include="Steeltoe.Extensions.Configuration.PlaceholderCore" Version="$(SteeltoeVersion)" />
-    <PackageReference Include="Steeltoe.Extensions.Configuration.RandomValueBase" Version="3.2.0" />
+    <PackageReference Include="Steeltoe.Extensions.Configuration.RandomValueBase" Version="$(SteeltoeVersion)" />
     <PackageReference Include="Steeltoe.Management.CloudFoundryCore" Version="$(SteeltoeVersion)" />
     <PackageReference Include="Steeltoe.Management.TaskCore" Version="$(SteeltoeVersion)" />
     <PackageReference Include="Steeltoe.Management.TracingCore" Version="$(SteeltoeVersion)" />
@@ -50,9 +51,9 @@
     <WriteLinesToFile File="git.properties" Lines="git.build.host=$([System.Environment]::GetEnvironmentVariable('COMPUTERNAME'))" Overwrite="false" />
   </Target>
   <ItemGroup Condition="$(LiveSync)=='true'">
-    <None Include="..\packages\watchexec" CopyToPublishDirectory="Always"/>
-    <None Include="..\manifest-tilt.yml" CopyToPublishDirectory="Always"/>
-    <None Include=".ignore"  CopyToPublishDirectory="Always"/>
+    <None Include="..\packages\watchexec" CopyToPublishDirectory="Always" />
+    <None Include="..\manifest-tilt.yml" CopyToPublishDirectory="Always" />
+    <None Include=".ignore" CopyToPublishDirectory="Always" />
   </ItemGroup>
   <ItemGroup>
     

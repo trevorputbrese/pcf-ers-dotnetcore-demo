@@ -22,6 +22,10 @@
           "type": "string",
           "description": "Cloud Foundry Password"
         },
+        "CfPushInit": {
+          "type": "boolean",
+          "description": "Should CF push be performed when livesync is started. Disabling is quicker, but only works if app was previously deployed for livesync"
+        },
         "CfSpace": {
           "type": "string",
           "description": "Cloud Foundry Space"

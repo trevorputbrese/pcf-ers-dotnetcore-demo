@@ -26,13 +26,13 @@
       "commandName": "Project",
       "launchBrowser": false,
       "environmentVariables": {
-        "VCAP_APPLICATION": "{   }",
+        "VCAP_APPLICATION": "{   }", 
         "ASPNETCORE_ENVIRONMENT": "Development",
         "SPRING__PROFILES__ACTIVE": "Backend",
         "VCAP__APPLICATION__NAME": "ers-backend",
         "Eureka__Instance__PreferIpAddress": "false",
         "Eureka__Instance__SecureVipAddress": "localhost.internal",
-        "Eureka__Instance__HostName": "localhost.internal",
+        "Eureka__Instance__HostName": "localhost.internal" 
       },
       "applicationUrl": "https://localhost.internal:8443"
     }

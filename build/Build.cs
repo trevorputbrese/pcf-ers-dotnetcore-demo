@@ -80,6 +80,8 @@ partial class Build : NukeBuild
     string PublicDomain;
     [Parameter("Trigger to use to trigger live sync (Build or Source. Default to Source)")]
     SyncTrigger SyncTrigger = SyncTrigger.Source;
+    [Parameter("Should CF push be performed when livesync is started. Disabling is quicker, but only works if app was previously deployed for livesync")]
+    bool CfPushInit = true;
 
 
 
@@ -197,7 +199,7 @@ partial class Build : NukeBuild
                     {"APP_NAME", AppName},
                     {"APP_DIR", "./src"},
                     {"SYNC_TRIGGER", SyncTrigger.ToString().ToLower()},
-                    {"CF_PUSH_INIT", "true"},
+                    {"CF_PUSH_INIT", CfPushInit.ToString().ToLower()},
                     {"AssemblyName", AssemblyName},
                     // {"PUSH_PATH", "."},
                     // {"PUSH_COMMAND", $"cd ${{HOME}} && ./watchexec --ignore *.yaml --restart --watch . 'dotnet {AssemblyName}.dll --urls http://0.0.0.0:8080'"},
@@ -290,27 +292,7 @@ partial class Build : NukeBuild
         .Description("Deploys {AppsCount} instances to Cloud Foundry /w all dependency services into current target set by cli")
         .Executes(async () =>
         {
-            // var orgGuid = CloudFoundry($"org {CfOrg} --guid", logOutput: false).StdToText();
-            // string defaultDomain = CloudFoundryCurl(o => o
-            //     .SetPath($"/v3/organizations/{orgGuid}/domains/default")
-            //     .DisableProcessLogOutput())
-            //     .StdToJson<dynamic>().name;
-            // string defaultInternalDomain = CloudFoundryCurl(o => o
-            //         .SetPath($"/v3/domains")
-            //         .DisableProcessLogOutput())
-            //     .ReadPaged<dynamic>()
-            //     .Where(x => x.@internal == true)
-            //     .Select(x => x.name)
-            //     .First();
-            //
-            // Assert.True(defaultDomain != null);
-            // Assert.True(defaultInternalDomain != null);
 
-            
-
-            // var green = "ers-green";
-            // var blue = "ers-blue";
-            // var backend = "ers-backend";
             var marketplace = CloudFoundry("marketplace", logOutput: false).StdToText();
             var hasMySql = marketplace.Contains("p.mysql");
             var hasDiscovery = marketplace.Contains("p.service-registry");

@@ -1,3 +1,2 @@
 ﻿---
-"$schema": https://steeltoe.io/schema/latest/schema.json
-Environment: Default
+LightsaberColor: Green

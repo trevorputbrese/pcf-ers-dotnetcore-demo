@@ -1,0 +1,89 @@
+﻿@using Articulate.Models
+@inject AppEnv _app
+<div class="card shadow mb-4" id="pageBody">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Configuration</h6>
+    </div>
+    <div class="card-body">
+        <select v-model="selected">
+            <option v-for="(name, id) in providers" :value="id">{{ name }} </option> 
+        </select>
+    </div>
+    <table class="table table-bordered dataTable" id="dataTable" width="100%" cellspacing="0" role="grid" aria-describedby="dataTable_info" style="width: 100%;">
+        <thead>
+        <tr role="row">
+            <th>Key</th>
+            <th>Value</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="(value, key) in configValues">
+            <td>{{ key }}</td>
+            <td>{{ value }}</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<script>
+var pageModel = new Vue({
+    el: '#pageBody',
+    data: {
+        selected: {},
+        providers: { },
+        values: {},
+        configValues: {}
+    },
+    _this: this,
+    mounted: function() {
+        this.refresh();
+        var self = this;
+        var getProvidersUrl = "@Url.Action("GetProviders")";
+        $.get(getProvidersUrl)
+        .done(function (result){ 
+            self.providers = result;
+            console.log(result);
+        })
+        
+    },
+    watch:{
+        selected: {
+            immediate: true,
+            handler(newId, oldId){
+                var self = this;
+                var getValuesUrl = "@Url.Action("GetConfiguration")" + '?id=' + newId
+                $.get(getValuesUrl, this.user)
+                 .done(function (result) {
+                    self.configValues = result;
+                });
+            }
+        }
+    },
+    methods: {
+        onSelectProvider: function (){
+            console.log('test');
+        },
+        add: function () {
+            var self = this;
+            var addUserUrl = "@Url.Action("AddUser","Services")";
+            $.post(addUserUrl, this.user)
+             .always(function () {
+                self.refresh();
+            });
+            
+        },
+        clear: function () {
+            var self = this;
+            var clearUrl = "@Url.Action("ClearUsers","Services")";
+            $.post(clearUrl, function () { self.refresh() });
+        },
+        refresh: function (){
+            var getUsers = "@Url.Action("GetUsers","Services")";
+            var self = this;
+            $.get(getUsers, function (users) {
+                  self.users = users;
+            });
+        },
+        
+    }
+});
+</script>

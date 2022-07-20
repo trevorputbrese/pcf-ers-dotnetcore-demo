@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration.Memory;
 using Microsoft.Extensions.Options;
+using Steeltoe.Common.Hosting;
 using Steeltoe.Common.Http;
 using Steeltoe.Common.Http.Discovery;
 using Steeltoe.Common.Options;
@@ -34,76 +35,42 @@ using Steeltoe.Management.TaskCore;
 using Steeltoe.Management.Tracing;
 using Steeltoe.Security.Authentication.CloudFoundry;
 using Steeltoe.Discovery.Eureka;
+using Steeltoe.Extensions.Configuration.ConfigServer;
 using LocalCertificateWriter = Articulate.LocalCerts.LocalCertificateWriter;
 
-Console.WriteLine("==== App is starting.... ====");
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.ConfigureKestrel(kestrel =>
-{
-    // we're doing some hacks with certs here when working locally to do pseudo SNI for c2c vs public routes, so we want to use 
-    kestrel.GetType().GetMethod("EnsureDefaultCert", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(kestrel, null);
-    var defaultCertificate = (X509Certificate2)kestrel.GetType().GetProperty("DefaultCertificate", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(kestrel);
-    kestrel.ConfigureHttpsDefaults(https =>
-    {
-        https.AllowAnyClientCertificate();
-
-        https.ServerCertificateSelector = (context, name) =>
-        {
-            if (name.EndsWith(".internal") || Regex.IsMatch(name, @"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"))
-            {
-                var cert = kestrel.ApplicationServices.GetService<IOptionsMonitor<CertificateOptions>>().CurrentValue.Certificate;
-                if (!System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
-                    return cert;
-
-                // Hack for Windoze Bug No credentials are available in the security package 
-                // SslStream not working with ephemeral keys
-                try
-                {
-                    return new X509Certificate2(cert.Export(X509ContentType.Pkcs12));
-                }
-                catch (Exception)
-                {
-                    return defaultCertificate;
-                }
-            }
-
-            return defaultCertificate;
-        };
-        // https.ServerCertificate = X509Certificate2.CreateFromPemFile(Environment.GetEnvironmentVariable("CF_INSTANCE_CERT"), Environment.GetEnvironmentVariable("CF_INSTANCE_KEY"));
-        https.ClientCertificateMode = ClientCertificateMode.AllowCertificate;
-    });
-});
+builder.UseCloudFoundryCertificateForInternalRoutes();    
 // when running locally, get config from <gitroot>/config folder
-string configDir = "../config/";
-var appName = typeof(Program).Assembly.GetName().Name;
+// string configDir = "../config/";
+// var appName = typeof(Program).Assembly.GetName().Name;
 builder.Configuration
     .AddYamlFile("appsettings.yaml", false, true)
     .AddYamlFile($"appsettings.{builder.Environment.EnvironmentName}.yaml", true, true)
-    .AddYamlFile($"{configDir}{appName}.yaml", true, true)
-    .AddYamlFile($"{configDir}{appName}-{builder.Environment.EnvironmentName}.yaml", true, true)
-    .AddProfiles(configDir)
+    .AddProfiles()
     .AddEnvironmentVariables();
 builder.Configuration
+    .AddConfigServer()
     .AddCloudFoundry()
-    .AddProfiles(configDir)
+    .AddProfiles()
     .AddEnvironmentVariables();
 
 if (builder.Environment.IsDevelopment())
 {
-    var task = new LocalCertificateWriter();
-    task.Write(builder.Configuration.GetValue<Guid>("vcap:application:organization_id"), builder.Configuration.GetValue<Guid>("vcap:application:space_id"));
-    Environment.SetEnvironmentVariable("CF_INSTANCE_CERT", Path.Combine(LocalCertificateWriter.AppBasePath, "GeneratedCertificates", "SteeltoeInstanceCert.pem"));
-    Environment.SetEnvironmentVariable("CF_INSTANCE_KEY", Path.Combine(LocalCertificateWriter.AppBasePath, "GeneratedCertificates", "SteeltoeInstanceKey.pem"));
+    builder.UseDevCertificate();
 }
+
 builder.Configuration
     .AddCloudFoundryContainerIdentity()
     .AddEnvironmentVariables()
     .AddCommandLine(args)
+    .AddInMemoryCollection(new Dictionary<string, string>
+    {
+        { "MyConnectionString", "Server=${SqlHost};Database=${SqlDatabase};User Id=${SqlUser};Password=${SqlPassword};" },
+        { "AppInstanceId", "${random:value}" }
+    })
     .AddRandomValueSource()
-    .AddPlaceholderResolver()
-    .AddInMemoryCollection(new Dictionary<string, string>());
-
-var overrideProvider = ((IConfigurationRoot)builder.Configuration).Providers.OfType<MemoryConfigurationProvider>().Last();
+    .AddPlaceholderResolver();
+    
 
 builder.AddAllActuators();
 
@@ -146,10 +113,9 @@ services.AddDbContext<AttendeeContext>(db =>
 });
 services.AddTask<MigrateDbContextTask<AttendeeContext>>(ServiceLifetime.Scoped);
 
-
 services.AddTransient<TasClientCertificateHttpHandler>();
 
-var httpClientBuilder = services.AddHttpClient("default")
+var httpClientBuilder = services.AddHttpClient(Options.DefaultName)
     .ConfigurePrimaryHttpMessageHandler<TasClientCertificateHttpHandler>();
 
 var config = builder.Configuration;
@@ -167,6 +133,7 @@ if (isEurekaBound)
 }
 else
 {
+    services.AddConfigurationDiscoveryClient(config);
     services.AddSingleton<IDiscoveryClient, ConfigurationDiscoveryClient>();
 }
 

@@ -1,4 +1,11 @@
-﻿<Project>
+﻿<Project ToolsVersion="Current">
+  <PropertyGroup>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>2.0</OldToolsVersion>
+  </PropertyGroup>
   <ItemGroup>
     <None Include="*" />
   </ItemGroup>

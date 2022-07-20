@@ -37,7 +37,7 @@ public class SecurityController : Controller
 
     public async Task<string> CallMtlsService([FromServices]IHttpClientFactory httpFactory, [FromServices]IDiscoveryClient discoveryClient)
     {
-        var client = httpFactory.CreateClient("default");
+        var client = httpFactory.CreateClient();
         
         var anotherAppName = discoveryClient.Services.FirstOrDefault(x => x != _app.AppName);
         if (anotherAppName == null)
