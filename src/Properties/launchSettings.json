@@ -1,5 +1,15 @@
 {
   "profiles": {
+    "vcap-ers": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "environmentVariables": {
+        "VCAP_APPLICATION": "{   }",
+        "VCAP__APPLICATION__NAME": "ers",
+        "Eureka__Instance__SecurePort": "5001"
+      },
+      "applicationUrl": "https://localhost:5001"
+    },
     "vcap-blue": {
       "commandName": "Project",
       "launchBrowser": false,
@@ -11,6 +21,7 @@
       },
       "applicationUrl": "https://localhost:5001"
     },
+
     "vcap-green": {
       "commandName": "Project",
       "launchBrowser": false,

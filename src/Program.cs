@@ -47,10 +47,10 @@ builder.Configuration
     .AddYamlFile("appsettings.yaml", false, true)
     .AddYamlFile($"appsettings.{builder.Environment.EnvironmentName}.yaml", true, true)
     .AddProfiles()
-    .AddEnvironmentVariables();
-builder.Configuration
-    .AddConfigServer()
+    .AddEnvironmentVariables()
+    .AddCommandLine(args)
     .AddCloudFoundry()
+    .AddConfigServer()
     .AddProfiles()
     .AddEnvironmentVariables();
 
@@ -77,12 +77,13 @@ builder.AddAllActuators();
 var services = builder.Services;
 services.AddDistributedTracing();
 
-//services.AddSpringBootAdminClient(); // if sb admin is not running, app will crash
+//services.AddSpringBootAdminClient(); 
 services.AddSingleton(_ => new CloudFoundryApplicationOptions(builder.Configuration));
 services.AddSingleton(_ => new CloudFoundryServicesOptions(builder.Configuration));
 services.ConfigureCloudFoundryOptions(builder.Configuration);
 services.AddScoped<AppEnv>();
 services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+services.AddConfigServerHealthContributor();
 
 var isEurekaBound = builder.Configuration.IsServiceBound<EurekaServiceInfo>();
 var isMySqlServiceBound = builder.Configuration.IsServiceBound<MySqlServiceInfo>();
@@ -112,18 +113,20 @@ services.AddDbContext<AttendeeContext>(db =>
     }
 });
 services.AddTask<MigrateDbContextTask<AttendeeContext>>(ServiceLifetime.Scoped);
-
+services.AddTransient<SkipCertValidationHttpHandler>();
 services.AddTransient<TasClientCertificateHttpHandler>();
 
 var httpClientBuilder = services.AddHttpClient(Options.DefaultName)
     .ConfigurePrimaryHttpMessageHandler<TasClientCertificateHttpHandler>();
+
 
 var config = builder.Configuration;
 if (isEurekaBound)
 {
     services.AddDiscoveryClient();
     httpClientBuilder.AddServiceDiscovery();
-    services.PostConfigure<EurekaInstanceOptions>(c =>
+    services.AddHttpClient<EurekaDiscoveryClient>("Eureka").ConfigurePrimaryHttpMessageHandler<SkipCertValidationHttpHandler>();
+    services.PostConfigure<EurekaInstanceOptions>(c => // use for development to set instance ID and other things for simulated c2c communications
     {
         if (c.RegistrationMethod == "direct")
         {

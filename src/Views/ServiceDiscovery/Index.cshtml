@@ -14,7 +14,7 @@
 					stack helps us with this. Applications register and advertise their endpoints into a central registry, while other apps can lookup endpoints for their dependencies by using app's 
 					common name.</p>
 				
-				@if(false)
+				@if(! _configuration.IsServiceBound<EurekaServiceInfo>())
 				{
 					<p>To get this sample working you need to bind it to an instance of Eureka. Create eureka by following these steps: </p>
 					<ol>
@@ -58,7 +58,7 @@
 								<span class="text">Send distributed ping</span>
 							</a>
 						</div>
-						<div class="col-sm"><code>{{ response }}</code></div>
+						<div class="col-sm"><pre>{{ response }}</pre></div>
 					</div>
 					
 				}

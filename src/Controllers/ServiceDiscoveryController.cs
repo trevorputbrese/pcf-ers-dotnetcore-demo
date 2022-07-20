@@ -44,12 +44,12 @@ public class ServiceDiscoveryController : Controller
     }
 
         
-    public async Task<string> Ping([FromServices]IDiscoveryClient discoveryClient, string targets)
+    public async Task<string> Ping([FromServices]HttpClient httpClient, string targets)
     {
         var pong = string.Empty;
         if (!string.IsNullOrEmpty(targets))
         {
-            var httpClient = new HttpClient(new DiscoveryHttpClientHandler(discoveryClient));
+            // var httpClient = new HttpClient(new DiscoveryHttpClientHandler(_discoveryClient));
             _log.LogTrace($"Ping received. Remaining targets: {targets}");
             var allTargets = targets.Split(",").Where(x => x != _app.AppName).ToList();
                 
@@ -64,6 +64,7 @@ public class ServiceDiscoveryController : Controller
                 }
                 catch (Exception e)
                 {
+                    _log.LogInformation("test123");
                     _log.LogError(e, $"Call to {nextTarget} failed");
                     pong = $"{nextTarget} failed to answer";
                 }

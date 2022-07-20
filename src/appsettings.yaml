@@ -10,6 +10,7 @@ Spring:
           user.password: actuatorPassword
   Cloud:
     Config:
+      #Env: blue
       PollingInterval: "00:00:10"
 Security:
   Oauth2:
@@ -22,8 +23,8 @@ Logging:
     Microsoft.AspNetCore: Warning
     Microsoft.EntityFrameworkCore: Warning
     Microsoft.EntityFrameworkCore.Migrations: Information
-    Articulate: Trace
     Steeltoe.Discovery: Information
+    Articulate: Information
 Management:
   Endpoints:
     Cloudfoundry:
@@ -39,6 +40,8 @@ Eureka:
   Client:
     Validate_certificates: false
     ShouldRegisterWithEureka: true
+    HealthMonitoredApps: ers-backend
+    
 Discovery:
   Services:
   - ServiceId: ers-blue

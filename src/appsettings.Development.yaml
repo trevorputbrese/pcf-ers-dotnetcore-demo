@@ -1,5 +1,9 @@
 ﻿---
 "$schema": https://raw.githubusercontent.com/steeltoeoss-incubator/steeltoe-schema/master/schema.json
+Logging:
+  IncludeScopes: false
+  LogLevel:
+    Articulate: Trace
 Eureka:
   Instance:
     IsNonSecurePortEnabled: false

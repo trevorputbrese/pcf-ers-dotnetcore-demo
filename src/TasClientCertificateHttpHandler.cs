@@ -16,13 +16,6 @@ public class TasClientCertificateHttpHandler : ClientCertificateHttpHandler
     }
     private bool OnServerCertificateValidate(HttpRequestMessage request, X509Certificate2 certificate, X509Chain chain, SslPolicyErrors policyErrors)
     {
-        
-        if (IPAddress.TryParse(request.RequestUri!.Host, out _) && request.RequestUri.Host.StartsWith("10")) // don't do validation for internal addresses
-        {
-            return true;
-        }
-
-        
-        return chain.Build(certificate);
+        return true;
     }
 }

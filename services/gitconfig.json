@@ -2,5 +2,8 @@
     "git" : { 
         "uri": "https://github.com/macsux/pcf-ers-dotnetcore-demo",
         "searchPaths": "config"
+    },
+    "encrypt": {
+        "key": "APODNU3093r2rbjzxcn09u213asdhy08WRFH"
     }
 }
