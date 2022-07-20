@@ -1,2 +1,6 @@
 ﻿---
 LightsaberColor: Purple
+SqlHost: myserver.com
+SqlDatabase: ers-db
+SqlUser: sa
+SqlPassword: dontusesa
