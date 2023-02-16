@@ -43,6 +43,7 @@ builder.UseCloudFoundryCertificateForInternalRoutes();
 // when running locally, get config from <gitroot>/config folder
 // string configDir = "../config/";
 // var appName = typeof(Program).Assembly.GetName().Name;
+Hotfix.Apply();
 builder.Configuration
     .AddYamlFile("appsettings.yaml", false, true)
     .AddYamlFile($"appsettings.{builder.Environment.EnvironmentName}.yaml", true, true)
