@@ -4,7 +4,7 @@ applications:
   memory: 384M
   instances: 1
   random-route: true
-  path: src\bin\Debug\net6.0\linux-x64\publish\
+  path: src/bin/Debug/net6.0/linux-x64/publish/
   buildpacks:
     - dotnet_core_buildpack
   services: []
